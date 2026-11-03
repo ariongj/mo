@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Non-Woven Tote Configurator</title>
+<title>Non-Woven Bag Configurator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -24,6 +24,7 @@
     --chip: #2c2d31; --sel: #efeeeb; --sel-ink: #1c1c1e; --focus: #8fb0ff; --vig: rgba(0, 0, 0, 0.4); color-scheme: dark; }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { height: 100%; margin: 0; }
   body { background: var(--stage); color: var(--ink); font: 14px/1.45 var(--f-body); }
   #app { display: flex; height: 100%; }
@@ -70,6 +71,9 @@
   .file input { display: none; }
   .note { margin: 0; color: var(--muted); font-size: 12px; }
   #artName { font: 12px var(--f-mono); color: var(--muted); overflow-wrap: anywhere; }
+  .moq { margin: 0; font: 12px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .moq b { color: var(--ink); font-weight: 500; }
+  #sizeSeg button { min-width: 44px; font-family: var(--f-mono); }
 
   @media (max-width: 760px) {
     #app { flex-direction: column; height: auto; }
@@ -89,28 +93,41 @@
       <button id="v-side" data-view="side">Side</button>
       <button id="v-top" data-view="top">Inside</button>
     </div>
-    <div class="hud"><b id="dimsHud">20 × 27 × 10 cm</b><span>Drag to rotate · scroll to zoom</span></div>
+    <div class="hud"><b id="dimsHud">20 × 26 × 12 cm</b><span>Drag to rotate · scroll to zoom</span></div>
   </div>
 
   <aside id="panel">
     <header>
-      <h1>Non-woven tote</h1>
-      <p>Spunbond PP · ultrasonic welded · side gusset</p>
+      <h1>Non-woven bags</h1>
+      <p id="typeSub">Spunbond PP · ultrasonic welded</p>
     </header>
+
+    <section>
+      <h2>Bag type</h2>
+      <div class="seg" id="typeSeg">
+        <button data-v="box" class="on">Box bag</button>
+        <button data-v="handle">Handle bag</button>
+        <button data-v="dcut">D-cut</button>
+        <button data-v="tshirt">T-shirt</button>
+        <button data-v="string">String bag</button>
+      </div>
+      <div class="seg" id="sizeSeg" role="group" aria-label="Standard size"></div>
+      <p class="moq" id="moq"></p>
+    </section>
 
     <section>
       <h2>Fabric colour</h2>
       <div class="swatches" id="bagSw"></div>
     </section>
 
-    <section>
-      <h2>Handles</h2>
+    <section id="handlesSec">
+      <h2 id="handlesTitle">Handles</h2>
       <div class="swatches" id="handleSw"></div>
       <div class="seg" id="poseSeg">
         <button data-v="relaxed" class="on">Relaxed</button>
         <button data-v="upright">Upright</button>
       </div>
-      <div class="row"><label for="drop">Handle drop</label><input type="range" id="drop" min="6" max="35" step="0.5" value="12"><output id="o-drop"></output></div>
+      <div class="row" id="dropRow"><label for="drop">Handle drop</label><input type="range" id="drop" min="6" max="35" step="0.5" value="12"><output id="o-drop"></output></div>
     </section>
 
     <section>
@@ -132,12 +149,12 @@
 
     <section>
       <h2>Size</h2>
-      <div class="row"><label for="dW">Width</label><input type="range" id="dW" min="12" max="50" step="0.5" value="20"><output id="o-dW"></output></div>
-      <div class="row"><label for="dH">Height</label><input type="range" id="dH" min="15" max="50" step="0.5" value="27"><output id="o-dH"></output></div>
-      <div class="row"><label for="dD">Gusset</label><input type="range" id="dD" min="5" max="25" step="0.5" value="10"><output id="o-dD"></output></div>
-      <div class="row"><label for="hem">Top hem</label><input type="range" id="hem" min="2" max="6" step="0.1" value="3.2"><output id="o-hem"></output></div>
+      <div class="row"><label for="dW">Width</label><input type="range" id="dW" min="12" max="60" step="0.5" value="20"><output id="o-dW"></output></div>
+      <div class="row"><label for="dH">Height</label><input type="range" id="dH" min="15" max="65" step="0.5" value="26"><output id="o-dH"></output></div>
+      <div class="row"><label for="dD">Gusset</label><input type="range" id="dD" min="0" max="25" step="0.5" value="12"><output id="o-dD"></output></div>
+      <div class="row" id="hemRow"><label for="hem">Top hem</label><input type="range" id="hem" min="2" max="6" step="0.1" value="3.2"><output id="o-hem"></output></div>
       <div class="row"><label for="full">Fill</label><input type="range" id="full" min="0" max="1" step="0.01" value="0.35"><output id="o-full"></output></div>
-      <p class="note">Default size is estimated from your photos. Measure the real bag and set it here.</p>
+      <p class="note">Standard sizes come from your size sheet. Moving a slider makes a custom size.</p>
     </section>
 
     <section>
@@ -175,8 +192,23 @@ const BAG_COLOURS = [
 const HANDLE_COLOURS = [['Black', '#1b1c20'], ['Match fabric', 'match'], ['White', '#eceae4'], ['Navy', '#1f2b4d']];
 const INK_COLOURS = [['Black', '#1a1a1a'], ['White', '#f4f3ef'], ['Gold', '#c49a3c'], ['Navy', '#1f2b4d'], ['Red', '#c8231b']];
 
+// Standard sizes from the GoBack size sheet: [label, width, height, gusset (cm), minimum order].
+const TYPES = {
+  box:    { name: 'Box bag', sub: 'Side gusset · welded webbing handles', gusset: 'side', handles: 'loop', strap: 'webbing', hem: 3.2, py: 0.51, ps: 0.85, handle: '#1b1c20',
+            sizes: [['XS', 20, 26, 12, '3,800'], ['S', 25, 26, 12, '3,300'], ['M', 32, 29.5, 15, '5,300'], ['L', 40, 38.5, 17, '4,400'], ['XL', 47, 42, 20, '3,800']] },
+  handle: { name: 'Handle bag', sub: 'Bottom gusset · fabric loop handles', gusset: 'bottom', handles: 'loop', strap: 'fabric', close: 0.35, hem: 3, py: 0.53, ps: 0.8, handle: 'match',
+            sizes: [['XS', 20, 25, 5, '5,000'], ['S', 25, 29.5, 5, '4,000'], ['M', 35, 33, 8, '2,800'], ['L', 45, 42, 10, '4,000'], ['XL', 55, 44.5, 15, '≈3,500']] },
+  dcut:   { name: 'D-cut bag', sub: 'Die-cut handle with reinforcement patch', gusset: 'bottom', handles: 'dcut', close: 0.85, hem: 0, py: 0.6, ps: 0.72,
+            sizes: [['XS', 20, 25, 0, '5,000'], ['S', 25, 27.5, 5, '4,000'], ['M', 35, 31, 8, '2,800'], ['L', 45, 39, 10, '4,000'], ['XL', 55, 44.5, 10, '≈3,500']] },
+  tshirt: { name: 'T-shirt bag', sub: 'Vest handles · side gusset', gusset: 'side', handles: 'tshirt', hem: 0, py: 0.68, ps: 0.66,
+            sizes: [['S', 27, 40, 12, '5,000'], ['M', 27, 50, 12, '4,000'], ['L', 32, 60, 17, '3,300']] },
+  string: { name: 'String bag', sub: 'Drawstring backpack · cord channel', gusset: 'bottom', handles: 'string', close: 0.6, hem: 3, py: 0.55, ps: 0.72, handle: '#1b1c20',
+            sizes: [['XS', 20, 27, 5, '5,000'], ['S', 25, 32.5, 5, '4,000'], ['M', 35, 36, 8, '2,800'], ['L', 45, 45, 10, '4,000'], ['XL', 55, 47.5, 15, '≈3,500']] },
+};
+
 const state = {
-  W: 20, H: 27, D: 10, hem: 3.2, drop: 12, full: 0.35, pose: 'relaxed',
+  type: 'box', size: 'XS',
+  W: 20, H: 26, D: 12, hem: 3.2, drop: 12, full: 0.35, pose: 'relaxed',
   bag: '#d42a1f', handle: '#1b1c20', ink: '#1a1a1a',
   method: 'mono', pscale: 0.85, py: 0.51, back: false,
 };
@@ -282,13 +314,35 @@ let L = layout();
 
 // ---------------- bag body geometry ----------------
 // The side gusset folds inward along its centre crease, more toward the top and less when the bag is full.
+// Bottom-gusset bags (handle, D-cut, string) have no side gusset: the sides pinch into a welded seam above the base.
 function profile(y) {
-  const g = state.D / 2, y0 = Math.min(g, state.H * 0.45);
-  const s = g * (0.82 - 0.6 * state.full) * Math.pow(smooth(y0, state.H, y), 1.4);
+  const T = TYPES[state.type], g = state.D / 2, H = state.H;
+  if (T.gusset === 'bottom') {
+    const yT = Math.min(H * 0.5, Math.max(state.D * 1.25, 2));
+    return { d: g * (1 - smooth(0, yT, y)), s: 0 };
+  }
+  const y0 = Math.min(g, H * 0.45);
+  let fold = (0.82 - 0.6 * state.full) * Math.pow(smooth(y0, H, y), 1.4);
+  if (T.handles === 'tshirt') {   // the body stays open; the gusset folds flat up into each handle
+    const b = 0.5 - 0.35 * state.full, yb = tshirtCut().yb;
+    fold = b * smooth(y0, yb, y) + (0.97 - b) * smooth(yb - 3, H, y);
+  }
+  const s = g * fold;
   return { d: Math.sqrt(Math.max(g * g - s * s, 1e-4)), s };
 }
+// T-shirt bag: the centre of the top is cut away, leaving a handle of width hw on each side.
+function tshirtCut() {
+  const { W, H, D } = state;
+  const hw = Math.min(W * 0.4, Math.max(D / 2 + 0.8, W * 0.24)), c = W / 2 - hw;
+  return { hw, c, yb: H * 0.64, e: Math.min(c * 0.75, H * 0.1) };
+}
+// D-cut bag: a rounded slot near the top of both panels, inside a welded reinforcement patch.
+function dcutHole() {
+  const { W } = state, w = Math.min(9, W * 0.45), h = 3;
+  return { w, h, top: 2.6, pad: 1.4 };
+}
 function panelZ(x, y, seed) {
-  const { W, H, hem, full } = state;
+  const { W, H, hem, full } = state, T = TYPES[state.type];
   const ex = 1 - Math.pow(2 * x / W, 2), ey = Math.sin(Math.PI * Math.min(1, Math.max(0, y / H)));
   const edge = smooth(0, 1.4, W / 2 - Math.abs(x));             // keeps the seam with the gusset closed
   const bulge = (0.3 + 1.8 * full) * ex * Math.pow(ey, 0.8);
@@ -303,8 +357,17 @@ function panelZ(x, y, seed) {
     const t = px * dx + py * dy;
     if (t > 0 && t < Lc) { const perp = px * -dy + py * dx; crease -= 0.24 * (1 - 0.7 * full) * Math.exp(-((perp / 0.8) ** 2)) * Math.sin(Math.PI * t / Lc); }
   }
-  const hemStep = 0.05 * smooth(H - hem - 0.06, H - hem + 0.06, y);   // folded hem is two layers thick
-  return profile(y).d + bulge + buckle + (crease + hemStep) * edge;
+  // folded hem is two layers thick; on the string bag it is a cord channel, so it puffs out more
+  const hemStep = hem > 0 ? (T.handles === 'string' ? 0.22 : 0.05) * smooth(H - hem - 0.06, H - hem + 0.06, y) : 0;
+  if (T.gusset === 'bottom') {
+    // the base holds the panel out across its width while the side edges pinch in; the mouth stays a little open
+    const gw = profile(y).d, g = state.D / 2, exs = Math.pow(Math.max(ex, 0), 0.6);
+    const open = (0.5 + 2.2 * full) * exs * smooth(0, 3, y) * (0.5 + 0.5 * ey);
+    // D-cut and string bags close toward the top (held by the slot, cinched by the cord); handle bags only a little
+    const closing = 1 - (T.close || 0) * (1 - 0.5 * full) * smooth(H * 0.45, H, y);
+    return (gw + (g - gw) * exs + open) * closing + 0.1 * exs + buckle + hemStep * edge;
+  }
+  return profile(y).d + bulge + buckle + ((T.handles === 'tshirt' ? 0 : crease) + hemStep) * edge;
 }
 
 function grid(nu, nv, f, hint) {
@@ -346,26 +409,27 @@ function buildBody() {
   const parts = [];
   parts.push(grid(80, NV, (u, v) => { const x = -W / 2 + u * W, y = v * H; return { p: [x, y, panelZ(x, y, 1)], a: [L.front[0] + u * W, L.front[1] + (1 - v) * H] }; }, [0, 0, 1]));
   parts.push(grid(80, NV, (u, v) => { const x = W / 2 - u * W, y = v * H; return { p: [x, y, -panelZ(x, y, 2)], a: [L.back[0] + u * W, L.back[1] + (1 - v) * H] }; }, [0, 0, -1]));
-  for (const sx of [1, -1]) for (const half of ['f', 'b']) {
+  if (D >= 0.5) for (const sx of [1, -1]) for (const half of ['f', 'b']) {
     const R = sx > 0 ? L.right : L.left;
     parts.push(grid(16, NV, (u, v) => {
       const y = v * H, { d, s } = profile(y);
       // u: panel edge -> crease; each half bows out a little and carries its own small wrinkles
-      const bow = (0.12 + 0.35 * state.full) * (1 - 0.6 * s / g) * Math.sin(Math.PI * u)
-                + 0.06 * fbm(u * 3, y * 0.3, sx * 3 + (half === 'f' ? 1 : 2)) * Math.sin(Math.PI * u);
+      const bow = ((0.12 + 0.35 * state.full) * (1 - 0.6 * s / g) * Math.sin(Math.PI * u)
+                + 0.06 * fbm(u * 3, y * 0.3, sx * 3 + (half === 'f' ? 1 : 2)) * Math.sin(Math.PI * u)) * (d / g);
       const p = [sx * (W / 2 - s * u + bow), y, (half === 'f' ? d : -d) * (1 - u)];
       const fromFront = half === 'f' ? u * g : D - u * g;
       return { p, a: [R[0] + (sx > 0 ? fromFront : D - fromFront), R[1] + (1 - v) * H] };
     }, [sx, 0, 0]));
   }
-  parts.push(grid(30, 12, (u, v) => ({ p: [-W / 2 + u * W, 0.02, g - v * D], a: [L.bottom[0] + u * W, L.bottom[1] + v * D] }), [0, -1, 0]));
+  if (D >= 0.5) parts.push(grid(30, 12, (u, v) => ({ p: [-W / 2 + u * W, 0.02, g - v * D], a: [L.bottom[0] + u * W, L.bottom[1] + v * D] }), [0, -1, 0]));
   return mergeGeometries(parts);
 }
 
 // ---------------- handle (webbing strap) geometry ----------------
 // The strap is welded flat inside the hem, rises, and twists a quarter turn so it lies flat across the top of the loop.
 function buildStrap(side) {
-  const { W, H, hem, drop } = state, a = Math.min(0.28 * W, W / 2 - 2), sw = 2.5, ht = 0.055;
+  const { W, H, hem, drop } = state, a = Math.min(0.28 * W, W / 2 - 2), fabric = TYPES[state.type].strap === 'fabric';
+  const sw = fabric ? 3 : 2.5, ht = fabric ? 0.04 : 0.055;
   // Relaxed: the strap bends where it leaves the hem and the loop falls outward, the back one a bit further.
   const tilt = state.pose === 'relaxed' ? (side > 0 ? 0.62 : 0.85) : 0.1;
   const zIn = y => side * (profile(Math.min(y, H)).d - 0.2);
@@ -381,7 +445,7 @@ function buildStrap(side) {
   ], false, 'centripetal');
   const N = 200, pts = curve.getSpacedPoints(N);
   const N0 = new THREE.Vector3(0, -Math.sin(tilt), side * Math.cos(tilt));
-  const pos = [], nor = [], uv = [], idx = [];
+  const pos = [], nor = [], uv = [], uv1 = [], idx = [];
   const T = new THREE.Vector3(), Pp = new THREE.Vector3(), Np = new THREE.Vector3(), Wv = new THREE.Vector3(), Nn = new THREE.Vector3();
   let len = 0;
   for (let i = 0; i <= N; i++) {
@@ -399,18 +463,36 @@ function buildStrap(side) {
     faces.forEach(([w0, t0, w1, t1, n, ns], f) => {
       for (const [w, t] of [[w0, t0], [w1, t1]]) {
         pos.push((p.x + Wv.x * w * sw / 2 + Nn.x * t * ht) * CM, (p.y + Wv.y * w * sw / 2 + Nn.y * t * ht) * CM, (p.z + Wv.z * w * sw / 2 + Nn.z * t * ht) * CM);
-        nor.push(n.x * ns, n.y * ns, n.z * ns);
         uv.push(len, f < 2 ? (w < 0 ? 0 : 1) : 0.03);
+        uv1.push(len / FAB_TILE, (f < 2 ? (w < 0 ? 0 : sw) : 0.05) / FAB_TILE);
       }
     });
     if (i < N) for (let f = 0; f < 4; f++) { const b = i * 8 + f * 2, c = b + 8; idx.push(b, c, b + 1, b + 1, c, c + 1); }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setAttribute('uv1', new THREE.Float32BufferAttribute(uv1, 2));
   g.setIndex(idx);
+  g.computeVertexNormals();   // normals follow the winding, so both sides light correctly with DoubleSide
   return g;
+}
+
+// ---------------- drawstring cords (string bag) ----------------
+// Each cord leaves the top channel at the side seam, hangs down the side and is knotted through a back bottom corner.
+function buildCord(sx) {
+  const { W, H, hem } = state;
+  const ax = sx * (W / 2 - 1.6), ay = 1.6, az = -(panelZ(ax, ay, 2) + 0.25);
+  const pts = [
+    [sx * (W / 2 - 0.2), H - hem / 2, 0], [sx * (W / 2 + 0.9), H - hem / 2 - 1.4, -0.3], [sx * (W / 2 + 1.9), H * 0.62, -1.2],
+    [sx * (W / 2 + 1.5), H * 0.3, -1.9], [sx * (W / 2 - 0.3), 2.4, az - 0.7], [ax, ay, az],
+  ].map(([x, y, z]) => new THREE.Vector3(x * CM, y * CM, z * CM));
+  const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+  const g = new THREE.TubeGeometry(curve, 180, 0.22 * CM, 10, false);
+  const uvA = g.getAttribute('uv'), len = curve.getLength() / CM;
+  for (let i = 0; i < uvA.count; i++) uvA.setX(i, uvA.getX(i) * len);
+  const knot = new THREE.SphereGeometry(0.42 * CM, 16, 12); knot.translate(ax * CM, ay * CM, (az - 0.2) * CM);
+  return mergeGeometries([g.toNonIndexed(), knot.toNonIndexed()]);
 }
 
 // ---------------- procedural textures ----------------
@@ -563,38 +645,92 @@ function drawPrint(ctx, PX, rect, override = null) {
   if (!art) return;
   const [x, y, w, h] = rect;
   const src = override ? tinted(override) : state.method === 'mono' ? tinted(state.ink) : art.color;
-  const pw = state.pscale * w, ph = Math.min(pw * src.height / src.width, h * 0.9);
+  const top = printTop() + 0.4, room = h - top - 0.8;            // printable band, measured from the panel top
+  const pw = state.pscale * w, ph = Math.min(pw * src.height / src.width, room);
   const pw2 = ph * src.width / src.height;
-  const cy = Math.min(Math.max(y + state.py * h, y + state.hem + ph / 2 + 0.3), y + h - ph / 2 - 0.3);
+  const cy = Math.min(Math.max(y + state.py * h, y + top + ph / 2), y + h - ph / 2 - 0.4);
   ctx.save();
   ctx.globalAlpha = override ? 1 : state.method === 'mono' ? 0.88 : 1;   // screen-print ink lets a little fabric colour through
   ctx.drawImage(src, (x + w / 2 - pw2 / 2) * PX, (cy - ph / 2) * PX, pw2 * PX, ph * PX);
   ctx.restore();
 }
 
+function printTop() {   // cm below the top edge where artwork may start
+  const T = TYPES[state.type];
+  if (T.handles === 'tshirt') return state.H - tshirtCut().yb + 1;
+  if (T.handles === 'dcut') { const o = dcutHole(); return o.top + o.h + o.pad + 0.6; }
+  return state.hem;
+}
+
 // Three maps share one layout: colour, relief (welds pressed in, hem two layers thick) and gloss (melted welds and ink are smoother).
-const bumpC = document.createElement('canvas'), roughC = document.createElement('canvas');
-const bumpTex = new THREE.CanvasTexture(bumpC), roughTex = new THREE.CanvasTexture(roughC);
+const bumpC = document.createElement('canvas'), roughC = document.createElement('canvas'), alphaC = document.createElement('canvas');
+const bumpTex = new THREE.CanvasTexture(bumpC), roughTex = new THREE.CanvasTexture(roughC), alphaTex = new THREE.CanvasTexture(alphaC);
 const fibres = fibreCanvas();
 
+function roundRectPath(ctx, PX, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x * PX, y * PX, w * PX, h * PX, r * PX); }
+function weldRect(ctx, PX, x, y, w, h) {
+  weldLine(ctx, PX, x, y, x + w, y); weldLine(ctx, PX, x + w, y, x + w, y + h);
+  weldLine(ctx, PX, x + w, y + h, x, y + h); weldLine(ctx, PX, x, y + h, x, y);
+}
 function drawWelds(ctx, PX) {
-  const { W, H, D, hem } = state;
+  const { W, H, D, hem } = state, T = TYPES[state.type];
   const a = Math.min(0.28 * W, W / 2 - 2), sq = Math.min(2.2, hem * 0.72);
   for (const R of [L.front, L.back]) {
     const [x, y] = R;
-    weldLine(ctx, PX, x, y + hem, x + W, y + hem);
-    for (const sx of [-1, 1]) weldSquare(ctx, PX, x + W / 2 + sx * a, y + hem * 0.52, sq);
+    if (hem > 0) weldLine(ctx, PX, x, y + hem, x + W, y + hem);
+    if (T.handles === 'loop') for (const sx of [-1, 1]) weldSquare(ctx, PX, x + W / 2 + sx * a, y + hem * 0.52, sq);
+    if (T.gusset === 'bottom') { weldLine(ctx, PX, x + 0.5, y, x + 0.5, y + H); weldLine(ctx, PX, x + W - 0.5, y, x + W - 0.5, y + H); }
+    if (T.handles === 'dcut') {
+      const o = dcutHole();
+      weldRect(ctx, PX, x + W / 2 - o.w / 2 - o.pad, y + o.top - o.pad, o.w + 2 * o.pad, o.h + 2 * o.pad);
+    }
+    if (T.handles === 'tshirt') {
+      const t = tshirtCut();
+      weldLine(ctx, PX, x, y + H - 1.1, x + W, y + H - 1.1);                        // bottom seal
+      weldLine(ctx, PX, x, y + 0.9, x + t.hw, y + 0.9); weldLine(ctx, PX, x + W - t.hw, y + 0.9, x + W, y + 0.9);   // handle tops
+    }
   }
-  for (const R of [L.left, L.right]) {
-    const [x, y] = R, apexY = y + H - Math.min(D / 2, H * 0.45);
-    weldLine(ctx, PX, x, y + hem, x + D, y + hem);
-    weldLine(ctx, PX, x + D / 2, y, x + D / 2, apexY);
-    weldLine(ctx, PX, x, apexY, x + D, apexY);
-    weldLine(ctx, PX, x + D / 2, apexY, x, y + H);
-    weldLine(ctx, PX, x + D / 2, apexY, x + D, y + H);
+  if (D >= 0.5) for (const R of [L.left, L.right]) {
+    const [x, y] = R;
+    if (T.gusset === 'side') {
+      const apexY = y + H - Math.min(D / 2, H * 0.45);
+      if (hem > 0) weldLine(ctx, PX, x, y + hem, x + D, y + hem);
+      if (T.handles === 'tshirt') weldLine(ctx, PX, x, y + 0.9, x + D, y + 0.9);
+      weldLine(ctx, PX, x + D / 2, y, x + D / 2, apexY);
+      weldLine(ctx, PX, x, apexY, x + D, apexY);
+      weldLine(ctx, PX, x + D / 2, apexY, x, y + H);
+      weldLine(ctx, PX, x + D / 2, apexY, x + D, y + H);
+    } else {
+      const yT = Math.min(H * 0.5, Math.max(D * 1.25, 2));
+      weldLine(ctx, PX, x + D / 2, y + H - yT, x + D / 2, y + H);
+    }
   }
-  const [x, y] = L.bottom;
-  weldLine(ctx, PX, x + 0.4, y, x + 0.4, y + D); weldLine(ctx, PX, x + W - 0.4, y, x + W - 0.4, y + D);
+  if (D >= 0.5) { const [x, y] = L.bottom; weldLine(ctx, PX, x + 0.4, y, x + 0.4, y + D); weldLine(ctx, PX, x + W - 0.4, y, x + W - 0.4, y + D); }
+  if (T.handles === 'string') {   // reinforced back corners where the cords are knotted
+    const [x, y] = L.back, k = Math.min(4, W * 0.15);
+    for (const [cx, dir] of [[x, 1], [x + W, -1]]) {
+      weldLine(ctx, PX, cx, y + H - k, cx + dir * k, y + H);
+      ctx.beginPath(); ctx.arc((cx + dir * 1.6) * PX, (y + H - 1.6) * PX, 0.4 * PX, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+}
+// Cut-outs (D-cut slot, T-shirt vest top) as an alpha mask: white keeps fabric, black removes it.
+function drawCutouts(ctx, PX) {
+  const T = TYPES[state.type], { W, H } = state;
+  ctx.fillStyle = '#000';
+  for (const R of [L.front, L.back]) {
+    const [x, y] = R;
+    if (T.handles === 'dcut') { const o = dcutHole(); roundRectPath(ctx, PX, x + W / 2 - o.w / 2, y + o.top, o.w, o.h, o.h / 2); ctx.fill(); }
+    if (T.handles === 'tshirt') {
+      const t = tshirtCut(), cx = x + W / 2, ty = y + H - (t.yb + t.e);
+      ctx.beginPath();
+      ctx.moveTo((cx - t.c) * PX, (y - 1) * PX);
+      ctx.lineTo((cx - t.c) * PX, ty * PX);
+      ctx.ellipse(cx * PX, ty * PX, t.c * PX, t.e * PX, 0, Math.PI, 0, true);
+      ctx.lineTo((cx + t.c) * PX, (y - 1) * PX);
+      ctx.closePath(); ctx.fill();
+    }
+  }
 }
 
 let PXa = 40;
@@ -602,6 +738,8 @@ function redrawAtlas() {
   L = layout();
   PXa = Math.min(40, 4000 / L.AW, 4000 / L.AH);
   const PX = PXa, wpx = Math.round(L.AW * PX), hpx = Math.round(L.AH * PX), { W, hem } = state;
+  // a texture already on the GPU cannot change size in place, so release it and let three.js upload a fresh one
+  if (atlas.width !== wpx || atlas.height !== hpx) for (const t of [atlasTex, bumpTex, roughTex, alphaTex]) t.dispose();
 
   // colour
   atlas.width = wpx; atlas.height = hpx;
@@ -613,6 +751,12 @@ function redrawAtlas() {
   };
   tile(mottle, PX / 40, 'soft-light', 0.16);
   tile(fibres, PX / 40, 'soft-light', 0.55);
+  if (TYPES[state.type].handles === 'dcut') {   // the reinforcement patch is a second layer, a touch denser in colour
+    const o = dcutHole();
+    ctx.save(); ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    for (const R of [L.front, L.back]) ctx.fillRect((R[0] + W / 2 - o.w / 2 - o.pad) * PX, (R[1] + o.top - o.pad) * PX, (o.w + 2 * o.pad) * PX, (o.h + 2 * o.pad) * PX);
+    ctx.restore();
+  }
   ctx.save(); ctx.strokeStyle = weldColour(state.bag); ctx.lineCap = 'butt'; ctx.globalAlpha = 0.8;
   drawWelds(ctx, PX); ctx.restore();
   drawPrint(ctx, PX, L.front);
@@ -626,6 +770,10 @@ function redrawAtlas() {
   b.fillStyle = '#8c8c8c';
   for (const R of [L.front, L.back]) b.fillRect(R[0] * PX, R[1] * PX, W * PX, hem * PX);
   for (const R of [L.left, L.right]) b.fillRect(R[0] * PX, R[1] * PX, state.D * PX, hem * PX);
+  if (TYPES[state.type].handles === 'dcut') {
+    const o = dcutHole();
+    for (const R of [L.front, L.back]) b.fillRect((R[0] + W / 2 - o.w / 2 - o.pad) * PX, (R[1] + o.top - o.pad) * PX, (o.w + 2 * o.pad) * PX, (o.h + 2 * o.pad) * PX);
+  }
   b.strokeStyle = '#262626'; b.lineCap = 'butt'; drawWelds(b, PX);
   bumpTex.needsUpdate = true;
 
@@ -638,6 +786,15 @@ function redrawAtlas() {
   drawPrint(r, PX * hs, L.front, '#a6a6a6');
   if (state.back) drawPrint(r, PX * hs, L.back, '#a6a6a6');
   roughTex.needsUpdate = true;
+
+  alphaC.width = roughC.width; alphaC.height = roughC.height;
+  const al = alphaC.getContext('2d');
+  al.fillStyle = '#fff'; al.fillRect(0, 0, alphaC.width, alphaC.height);
+  drawCutouts(al, PX * hs);
+  alphaTex.needsUpdate = true;
+
+  const lum = new THREE.Color(state.bag).getHSL({}).l;   // thin light fabric lets the print show through from inside
+  showThrough.value = lum > 0.75 ? 0.3 : lum > 0.45 ? 0.14 : 0.05;
   dirty = true;
 }
 
@@ -645,8 +802,8 @@ function redrawAtlas() {
 const fabN = fabricNormal();
 const web = webbing();
 const outerMat = new THREE.MeshPhysicalMaterial({
-  map: atlasTex, normalMap: fabN, normalScale: new THREE.Vector2(0.55, 0.55),
-  bumpMap: bumpTex, bumpScale: 2.2, roughnessMap: roughTex, roughness: 1,
+  map: atlasTex, normalMap: fabN, normalScale: new THREE.Vector2(0.45, 0.45),
+  bumpMap: bumpTex, bumpScale: 2.2, roughnessMap: roughTex, roughness: 1, alphaMap: alphaTex, alphaTest: 0.5,
   sheen: 0.35, sheenRoughness: 0.5, sheenColor: 0xffffff, side: THREE.FrontSide,
 });
 // three.js uses either a normal map or a bump map; apply the weld relief on top of the fabric normal map.
@@ -655,27 +812,44 @@ outerMat.onBeforeCompile = sh => {
     '#include <normal_fragment_maps>\n#if defined( USE_BUMPMAP ) && defined( USE_NORMALMAP_TANGENTSPACE )\n\tnormal = perturbNormalArb( - vViewPosition, normal, dHdxy_fwd(), faceDirection );\n#endif');
 };
 outerMat.customProgramCacheKey = () => 'bag-outer-bump';
+const showThrough = { value: 0.05 };
 const innerMat = new THREE.MeshPhysicalMaterial({
-  color: 0xffffff, vertexColors: true, normalMap: fabN, normalScale: new THREE.Vector2(0.45, 0.45),
-  roughness: 0.9, sheen: 0.3, sheenRoughness: 0.6, side: THREE.BackSide,
+  color: 0xffffff, vertexColors: true, map: atlasTex, normalMap: fabN, normalScale: new THREE.Vector2(0.45, 0.45),
+  alphaMap: alphaTex, alphaTest: 0.5, roughness: 0.9, sheen: 0.3, sheenRoughness: 0.6, side: THREE.BackSide,
 });
+// Inside the bag, show only a faint, mirrored hint of the outside print (stronger on white fabric).
+innerMat.onBeforeCompile = sh => {
+  sh.uniforms.showThrough = showThrough;
+  sh.fragmentShader = 'uniform float showThrough;\n' + sh.fragmentShader.replace('#include <map_fragment>',
+    '#ifdef USE_MAP\n\tdiffuseColor.rgb = mix( diffuseColor.rgb, texture2D( map, vMapUv ).rgb * 0.92, showThrough );\n#endif');
+};
+innerMat.customProgramCacheKey = () => 'bag-inner-through';
 const strapMat = new THREE.MeshPhysicalMaterial({
   map: web.map, normalMap: web.nm, normalScale: new THREE.Vector2(0.9, 0.9),
   roughness: 0.5, sheen: 0.7, sheenRoughness: 0.35, sheenColor: 0x9a9a9a, side: THREE.DoubleSide,
+});
+const strapFabMat = new THREE.MeshPhysicalMaterial({   // handle bag: straps cut from the same non-woven fabric
+  normalMap: fabN, normalScale: new THREE.Vector2(0.5, 0.5), roughness: 0.85, sheen: 0.35, sheenRoughness: 0.5, side: THREE.DoubleSide,
+});
+const cordMat = new THREE.MeshPhysicalMaterial({
+  map: web.map, normalMap: web.nm, normalScale: new THREE.Vector2(1.2, 1.2), roughness: 0.7, sheen: 0.5, sheenRoughness: 0.4,
 });
 
 const bag = new THREE.Group(); scene.add(bag);
 const outer = new THREE.Mesh(new THREE.BufferGeometry(), outerMat);
 const inner = new THREE.Mesh(new THREE.BufferGeometry(), innerMat);
 const straps = [new THREE.Mesh(new THREE.BufferGeometry(), strapMat), new THREE.Mesh(new THREE.BufferGeometry(), strapMat)];
+const cords = [new THREE.Mesh(new THREE.BufferGeometry(), cordMat), new THREE.Mesh(new THREE.BufferGeometry(), cordMat)];
 outer.castShadow = outer.receiveShadow = true; inner.receiveShadow = true;
-for (const s of straps) { s.castShadow = s.receiveShadow = true; }
-bag.add(outer, inner, ...straps);
+outer.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, alphaMap: alphaTex, alphaTest: 0.5 });   // shadows respect cut-outs
+for (const s of [...straps, ...cords]) { s.castShadow = s.receiveShadow = true; }
+bag.add(outer, inner, ...straps, ...cords);
 
 function applyColours() {
   innerMat.color.set(state.bag).multiplyScalar(0.92);
   outerMat.sheenColor.set(state.bag).lerp(new THREE.Color(0xffffff), 0.2);
-  strapMat.color.set(state.handle === 'match' ? state.bag : state.handle);
+  const hc = state.handle === 'match' ? state.bag : state.handle;
+  strapMat.color.set(hc); strapFabMat.color.set(hc); cordMat.color.set(hc);
   document.documentElement.style.setProperty('--bagc', state.bag);
   dirty = true;
 }
@@ -684,8 +858,17 @@ function rebuild() {
   L = layout();
   const body = buildBody();
   outer.geometry.dispose(); outer.geometry = body; inner.geometry = body;
-  straps.forEach((s, i) => { s.geometry.dispose(); s.geometry = buildStrap(i === 0 ? 1 : -1); });
-  contact.scale.set(state.W * CM / 0.69 * 1.04, state.D * CM / 0.69 * 1.1, 1);
+  const T = TYPES[state.type];
+  straps.forEach((s, i) => {
+    s.visible = T.handles === 'loop';
+    s.material = T.strap === 'fabric' ? strapFabMat : strapMat;
+    s.geometry.dispose(); s.geometry = s.visible ? buildStrap(i === 0 ? 1 : -1) : new THREE.BufferGeometry();
+  });
+  cords.forEach((c, i) => {
+    c.visible = T.handles === 'string';
+    c.geometry.dispose(); c.geometry = c.visible ? buildCord(i === 0 ? -1 : 1) : new THREE.BufferGeometry();
+  });
+  contact.scale.set(state.W * CM / 0.69 * 1.04, Math.max(state.D, 2) * CM / 0.69 * 1.1, 1);
   redrawAtlas();
   document.getElementById('dimsHud').textContent = `${fmt(state.W)} × ${fmt(state.H)} × ${fmt(state.D)} cm`;
 }
@@ -696,11 +879,11 @@ const VIEWS = {
   '34':   { dir: [0.62, 0.3, 0.73], ty: 0.5 },
   front:  { dir: [0, 0.12, 1], ty: 0.5 },
   side:   { dir: [1, 0.12, 0.02], ty: 0.5 },
-  top:    { dir: [0.08, 1.5, 0.62], ty: 0.62 },
+  top:    { dir: [0.08, 1.5, 0.62], ty: 0.55 },
 };
 let tween = null;
 function viewTarget(name) {
-  const v = VIEWS[name], H = state.H + state.drop * 0.7, size = Math.max(H, state.W * 1.1) * CM;
+  const v = VIEWS[name], H = state.H + (TYPES[state.type].handles === 'loop' ? state.drop * 0.7 : 0), size = Math.max(H, state.W * 1.1) * CM;
   const target = new THREE.Vector3(0, (name === 'top' ? state.H * v.ty : H * v.ty) * CM, 0);
   const dist = size / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * (camera.aspect < 1 ? 1.35 / camera.aspect : 1.35);
   const pos = new THREE.Vector3(...v.dir).normalize().multiplyScalar(dist).add(target);
@@ -746,14 +929,18 @@ swatches('bagSw', BAG_COLOURS, 'bag', () => { applyColours(); syncHandle(); redr
 const inkRow = document.getElementById('inkSw');
 swatches('inkSw', INK_COLOURS, 'ink', redrawAtlas);
 
+const sliderSync = {};
 function slider(id, keyName, show, after) {
   const el = document.getElementById(id), out = document.getElementById('o-' + id);
   const upd = () => { out.textContent = show(+el.value); };
   el.value = state[keyName]; upd();
+  sliderSync[keyName] = () => { el.value = state[keyName]; upd(); };
   el.addEventListener('input', () => { state[keyName] = +el.value; upd(); after(); });
 }
+const syncAll = () => Object.values(sliderSync).forEach(f => f());
 const cm = v => fmt(v) + ' cm', pct = v => Math.round(v * 100) + '%';
-slider('dW', 'W', cm, rebuild); slider('dH', 'H', cm, rebuild); slider('dD', 'D', cm, rebuild);
+const customSize = () => { state.size = null; syncSize(); rebuild(); };
+slider('dW', 'W', cm, customSize); slider('dH', 'H', cm, customSize); slider('dD', 'D', cm, customSize);
 slider('hem', 'hem', cm, rebuild); slider('drop', 'drop', cm, rebuild);
 slider('full', 'full', v => v < 0.15 ? 'Empty' : v > 0.75 ? 'Packed' : pct(v), rebuild);
 slider('pscale', 'pscale', pct, redrawAtlas); slider('py', 'py', pct, redrawAtlas);
@@ -763,6 +950,44 @@ document.getElementById('poseSeg').addEventListener('click', e => {
   document.querySelectorAll('#poseSeg button').forEach(x => x.classList.toggle('on', x === b));
   rebuild();
 });
+// bag type and the standard sizes for it
+const sizeSeg = document.getElementById('sizeSeg'), moq = document.getElementById('moq');
+function syncSize() {
+  const T = TYPES[state.type];
+  sizeSeg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === state.size));
+  const hit = T.sizes.find(z => z[0] === state.size);
+  moq.innerHTML = hit ? `Minimum order <b>${hit[4]} pcs</b>` : 'Custom size · minimum order on request';
+}
+function applySize(label) {
+  const z = TYPES[state.type].sizes.find(q => q[0] === label); if (!z) return;
+  Object.assign(state, { size: label, W: z[1], H: z[2], D: z[3] });
+  if (TYPES[state.type].handles === 'loop') state.drop = Math.min(30, Math.max(10, Math.round(state.H * 0.46)));
+  syncAll(); syncSize(); rebuild(); setView('34');
+}
+function applyType(type) {
+  const T = TYPES[type];
+  state.type = type;
+  document.querySelectorAll('#typeSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === type));
+  document.getElementById('typeSub').textContent = T.sub;
+  Object.assign(state, { hem: T.hem, py: T.py, pscale: T.ps });
+  if (T.handle) { state.handle = T.handle; syncHandle(); applyColours(); }
+  sizeSeg.innerHTML = '';
+  for (const [label, w, h, d] of T.sizes) {
+    const b = document.createElement('button'); b.dataset.v = label; b.textContent = label;
+    b.title = `${label}: ${w} × ${h} × ${d} cm`;
+    b.onclick = () => applySize(label);
+    sizeSeg.appendChild(b);
+  }
+  const loop = T.handles === 'loop', cordsOn = T.handles === 'string';
+  document.getElementById('handlesSec').hidden = !(loop || cordsOn);
+  document.getElementById('handlesTitle').textContent = cordsOn ? 'Cords' : 'Handles';
+  document.getElementById('poseSeg').hidden = !loop;
+  document.getElementById('dropRow').hidden = !loop;
+  document.getElementById('hemRow').hidden = T.hem === 0;
+  applySize(T.sizes.some(z => z[0] === state.size) ? state.size : T.sizes[0][0]);
+}
+document.getElementById('typeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) applyType(b.dataset.v); });
+
 document.getElementById('printBack').onchange = e => { state.back = e.target.checked; redrawAtlas(); };
 
 document.getElementById('methodSeg').addEventListener('click', e => {
@@ -882,10 +1107,10 @@ function render(force = false) {
 renderer.setAnimationLoop(render);
 
 applyColours();
-rebuild();
+applyType('box');
 setView('34', false);
 useSample().then(() => { window.__ready = true; });
-window.__api = { renderer, render: () => render(true), state, setView, rebuild, redrawAtlas, camera, controls, composer, gtao, scene };
+window.__api = { renderer, render: () => render(true), applyType, applySize, state, setView, rebuild, redrawAtlas, camera, controls, composer, gtao, scene };
 </script>
 </body>
 </html>
