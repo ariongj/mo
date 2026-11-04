@@ -263,7 +263,7 @@ const contact = (() => {
   }
   const t = new THREE.CanvasTexture(c);
   const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, color: 0x000000, opacity: 0.85 }));
-  m.rotation.x = -Math.PI / 2; m.position.y = 0.0004; m.renderOrder = 1;
+  m.rotation.x = -Math.PI / 2; m.position.y = 0.0001; m.renderOrder = 1;   // below the base, never drawn over the inside
   scene.add(m);
   return m;
 })();
@@ -352,7 +352,7 @@ function panelZ(x, y, seed) {
     const open = (0.5 + 2.2 * full) * exs * smooth(0, 3, y) * (0.5 + 0.5 * ey);
     // D-cut and string bags close toward the top (held by the slot, cinched by the cord); handle bags only a little
     const closing = 1 - (T.close || 0) * (1 - 0.5 * full) * smooth(H * 0.45, H, y);
-    return (gw + (g - gw) * exs + open) * closing + 0.1 * exs + buckle + hemStep * edge;
+    return (gw + (g - gw) * exs + open) * closing + 0.1 * exs * smooth(0, 3, y) + buckle + hemStep * edge;
   }
   return profile(y).d + bulge + buckle + ((T.handles === 'tshirt' ? 0 : crease) + hemStep) * edge;
 }
@@ -367,7 +367,7 @@ function grid(nu, nv, f, hint) {
     uv[k * 2] = r.a[0] / L.AW; uv[k * 2 + 1] = 1 - r.a[1] / L.AH;
     uv1[k * 2] = r.a[0] / FAB_TILE; uv1[k * 2 + 1] = -r.a[1] / FAB_TILE;
     // fake occlusion for the inside of the bag: darker toward the bottom
-    const ao = 0.3 + 0.7 * Math.pow(Math.min(1, Math.max(0, r.p[1] / state.H)), 0.75);
+    const ao = 0.5 + 0.5 * Math.pow(Math.min(1, Math.max(0, r.p[1] / state.H)), 0.75);
     col[k * 3] = col[k * 3 + 1] = col[k * 3 + 2] = ao;
   }
   const idx = [];
@@ -402,13 +402,13 @@ function buildBody() {
       const y = v * H, { d, s } = profile(y);
       // u: panel edge -> crease; each half bows out a little and carries its own small wrinkles
       const bow = ((0.12 + 0.35 * state.full) * (1 - 0.6 * s / g) * Math.sin(Math.PI * u)
-                + 0.06 * fbm(u * 3, y * 0.3, sx * 3 + (half === 'f' ? 1 : 2)) * Math.sin(Math.PI * u)) * (d / g);
+                + 0.06 * fbm(u * 3, y * 0.3, sx * 3 + (half === 'f' ? 1 : 2)) * Math.sin(Math.PI * u)) * (d / g) * smooth(0, 2.5, y);
       const p = [sx * (W / 2 - s * u + bow), y, (half === 'f' ? d : -d) * (1 - u)];
       const fromFront = half === 'f' ? u * g : D - u * g;
       return { p, a: [R[0] + (sx > 0 ? fromFront : D - fromFront), R[1] + (1 - v) * H] };
     }, [sx, 0, 0]));
   }
-  if (D >= 0.5) parts.push(grid(30, 12, (u, v) => ({ p: [-W / 2 + u * W, 0.02, g - v * D], a: [L.bottom[0] + u * W, L.bottom[1] + v * D] }), [0, -1, 0]));
+  if (D >= 0.5) parts.push(grid(30, 12, (u, v) => ({ p: [-W / 2 + u * W, 0, g - v * D], a: [L.bottom[0] + u * W, L.bottom[1] + v * D] }), [0, -1, 0]));
   return mergeGeometries(parts);
 }
 
@@ -465,6 +465,24 @@ function buildStrap(side) {
   return g;
 }
 
+// ---------------- top rim ----------------
+// The top edge is a fold of two fabric layers, so it gets a thin rounded rim instead of a zero-thickness edge.
+function buildRim() {
+  const { W, H, D } = state, T = TYPES[state.type];
+  const yT = H - 0.02, { d, s } = profile(yT), side = T.gusset === 'side' && D >= 0.5;
+  // one open tube per edge, so the sharp corners where edges meet stay sharp instead of looping
+  const edges = [[], []];
+  for (let i = 0; i <= 60; i++) { const x = -W / 2 + W * i / 60; edges[0].push([x, yT, panelZ(x, yT, 1)]); edges[1].push([x, yT, -panelZ(x, yT, 2)]); }
+  if (side) for (const sx of [1, -1]) for (const zs of [1, -1]) {
+    const e = []; for (let i = 0; i <= 8; i++) { const u = i / 8; e.push([sx * (W / 2 - s * u), yT, zs * d * (1 - u)]); }
+    edges.push(e);
+  }
+  return mergeGeometries(edges.map(e => {
+    const c = new THREE.CatmullRomCurve3(e.map(([x, y, z]) => new THREE.Vector3(x * CM, y * CM, z * CM)), false, 'centripetal');
+    return new THREE.TubeGeometry(c, e.length * 2, 0.065 * CM, 6, false);
+  }));
+}
+
 // ---------------- drawstring cords (string bag) ----------------
 // Each cord leaves the top channel at the side seam, hangs down the side and is knotted through a back bottom corner.
 function buildCord(sx) {
@@ -497,8 +515,9 @@ function normalFromHeight(h, w, hh, strength) {
 }
 // Spunbond emboss: staggered oval dots on a ~1.3 mm pitch, plus fibre noise.
 function fabricNormal() {
-  const S = 256, h = new Float32Array(S * S), cols = 8, rows = 8, px = S / cols, py = S / rows;
-  const rx = px * 0.33, ry = py * 0.24;
+  // 7 x 8 staggered dots: row pitch / column pitch = 0.875, close to a true hexagonal grid, and an even row count tiles seamlessly
+  const S = 256, h = new Float32Array(S * S), cols = 7, rows = 8, px = S / cols, py = S / rows;
+  const rx = px * 0.26, ry = rx;
   for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
     let v = 0;
     for (let r = -1; r <= rows; r++) {
@@ -789,7 +808,7 @@ function redrawAtlas() {
 const fabN = fabricNormal();
 const web = webbing();
 const outerMat = new THREE.MeshPhysicalMaterial({
-  map: atlasTex, normalMap: fabN, normalScale: new THREE.Vector2(0.45, 0.45),
+  map: atlasTex, normalMap: fabN, normalScale: new THREE.Vector2(0.36, 0.36),
   bumpMap: bumpTex, bumpScale: 2.2, roughnessMap: roughTex, roughness: 1, alphaMap: alphaTex, alphaTest: 0.5,
   sheen: 0.35, sheenRoughness: 0.5, sheenColor: 0xffffff, side: THREE.FrontSide,
 });
@@ -823,17 +842,21 @@ const cordMat = new THREE.MeshPhysicalMaterial({
 });
 
 const bag = new THREE.Group(); scene.add(bag);
+bag.position.y = 0.0004;   // 0.4 mm clear of the floor, so the base never flickers against it
 const outer = new THREE.Mesh(new THREE.BufferGeometry(), outerMat);
 const inner = new THREE.Mesh(new THREE.BufferGeometry(), innerMat);
 const straps = [new THREE.Mesh(new THREE.BufferGeometry(), strapMat), new THREE.Mesh(new THREE.BufferGeometry(), strapMat)];
 const cords = [new THREE.Mesh(new THREE.BufferGeometry(), cordMat), new THREE.Mesh(new THREE.BufferGeometry(), cordMat)];
+const rimMat = new THREE.MeshPhysicalMaterial({ roughness: 0.82, sheen: 0.35, sheenRoughness: 0.5 });
+const rim = new THREE.Mesh(new THREE.BufferGeometry(), rimMat);
 outer.castShadow = outer.receiveShadow = true; inner.receiveShadow = true;
 outer.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, alphaMap: alphaTex, alphaTest: 0.5 });   // shadows respect cut-outs
 for (const s of [...straps, ...cords]) { s.castShadow = s.receiveShadow = true; }
-bag.add(outer, inner, ...straps, ...cords);
+bag.add(outer, inner, rim, ...straps, ...cords);
 
 function applyColours() {
   innerMat.color.set(state.bag).multiplyScalar(0.92);
+  rimMat.color.set(state.bag); rimMat.sheenColor.set(state.bag).lerp(new THREE.Color(0xffffff), 0.2);
   outerMat.sheenColor.set(state.bag).lerp(new THREE.Color(0xffffff), 0.2);
   const hc = state.handle === 'match' ? state.bag : state.handle;
   strapMat.color.set(hc); strapFabMat.color.set(hc); cordMat.color.set(hc);
@@ -851,6 +874,8 @@ function rebuild() {
     s.material = T.strap === 'fabric' ? strapFabMat : strapMat;
     s.geometry.dispose(); s.geometry = s.visible ? buildStrap(i === 0 ? 1 : -1) : new THREE.BufferGeometry();
   });
+  rim.visible = TYPES[state.type].handles !== 'tshirt';   // the T-shirt top is a plain cut edge
+  rim.geometry.dispose(); rim.geometry = rim.visible ? buildRim() : new THREE.BufferGeometry();
   cords.forEach((c, i) => {
     c.visible = T.handles === 'string';
     c.geometry.dispose(); c.geometry = c.visible ? buildCord(i === 0 ? -1 : 1) : new THREE.BufferGeometry();
