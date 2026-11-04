@@ -2,8 +2,8 @@
 
 Interactive 3D preview of non-woven PP bags: box bag, handle bag, D-cut bag, T-shirt bag and string
 (drawstring) bag, each with the standard sizes and minimum order quantities from the size sheet.
-Fabric colour, handle colour, print (1-colour or full colour), print size and position, and custom
-dimensions can all be changed in the browser.
+Customers pick a bag type, one of its standard sizes, and preset fabric, handle and ink colours,
+then place their print (1-colour or full colour).
 
 Open `index.html` in a browser, or view the published page via GitHub Pages.
 

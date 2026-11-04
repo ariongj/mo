@@ -57,10 +57,6 @@
   .sw { width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 1px solid var(--line); position: relative; }
   .sw.on { outline: 2px solid var(--ink); outline-offset: 2px; background-clip: padding-box; }
   .sw[data-v="match"] { background: conic-gradient(var(--bagc, #d9271d) 0 50%, var(--chip) 0); }
-  input[type=color] { width: 28px; height: 28px; padding: 3px; border: 0; border-radius: 50%; cursor: pointer;
-                     background: conic-gradient(#e53935, #fdd835, #43a047, #1e88e5, #8e24aa, #e53935); }
-  input[type=color]::-webkit-color-swatch-wrapper { padding: 0; } input[type=color]::-webkit-color-swatch { border: 2px solid var(--panel); border-radius: 50%; }
-  input[type=color]::-moz-color-swatch { border: 2px solid var(--panel); border-radius: 50%; }
   .swname { font: 12px var(--f-mono); color: var(--muted); margin-left: 4px; }
 
   .row { display: grid; grid-template-columns: 84px 1fr 58px; align-items: center; gap: 10px; }
@@ -147,15 +143,6 @@
       <label class="check"><input type="checkbox" id="printBack"> Print the back panel too</label>
     </section>
 
-    <section>
-      <h2>Size</h2>
-      <div class="row"><label for="dW">Width</label><input type="range" id="dW" min="12" max="60" step="0.5" value="20"><output id="o-dW"></output></div>
-      <div class="row"><label for="dH">Height</label><input type="range" id="dH" min="15" max="65" step="0.5" value="26"><output id="o-dH"></output></div>
-      <div class="row"><label for="dD">Gusset</label><input type="range" id="dD" min="0" max="25" step="0.5" value="12"><output id="o-dD"></output></div>
-      <div class="row" id="hemRow"><label for="hem">Top hem</label><input type="range" id="hem" min="2" max="6" step="0.1" value="3.2"><output id="o-hem"></output></div>
-      <div class="row"><label for="full">Fill</label><input type="range" id="full" min="0" max="1" step="0.01" value="0.35"><output id="o-full"></output></div>
-      <p class="note">Standard sizes come from your size sheet. Moving a slider makes a custom size.</p>
-    </section>
 
     <section>
       <h2>Light</h2>
@@ -901,7 +888,7 @@ document.getElementById('views').addEventListener('click', e => { const b = e.ta
 controls.addEventListener('start', () => { tween = null; document.querySelectorAll('#views button').forEach(b => b.classList.remove('on')); });
 
 // ---------------- UI ----------------
-function swatches(el, list, keyName, after, custom = true) {
+function swatches(el, list, keyName, after) {
   const holder = document.getElementById(el);
   const name = document.createElement('span'); name.className = 'swname';
   const sync = () => {
@@ -914,12 +901,6 @@ function swatches(el, list, keyName, after, custom = true) {
     if (v !== 'match') b.style.background = v;
     b.onclick = () => { state[keyName] = v; sync(); after(); };
     holder.appendChild(b);
-  }
-  if (custom) {
-    const c = document.createElement('input'); c.type = 'color'; c.id = el + '-custom'; c.title = 'Custom colour'; c.setAttribute('aria-label', 'Custom colour');
-    c.value = list[0][1].startsWith('#') ? list[0][1] : '#000000';
-    c.oninput = () => { state[keyName] = c.value; sync(); after(); };
-    holder.appendChild(c);
   }
   holder.appendChild(name); sync();
   return sync;
@@ -939,10 +920,7 @@ function slider(id, keyName, show, after) {
 }
 const syncAll = () => Object.values(sliderSync).forEach(f => f());
 const cm = v => fmt(v) + ' cm', pct = v => Math.round(v * 100) + '%';
-const customSize = () => { state.size = null; syncSize(); rebuild(); };
-slider('dW', 'W', cm, customSize); slider('dH', 'H', cm, customSize); slider('dD', 'D', cm, customSize);
-slider('hem', 'hem', cm, rebuild); slider('drop', 'drop', cm, rebuild);
-slider('full', 'full', v => v < 0.15 ? 'Empty' : v > 0.75 ? 'Packed' : pct(v), rebuild);
+slider('drop', 'drop', cm, rebuild);
 slider('pscale', 'pscale', pct, redrawAtlas); slider('py', 'py', pct, redrawAtlas);
 document.getElementById('poseSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
@@ -956,7 +934,7 @@ function syncSize() {
   const T = TYPES[state.type];
   sizeSeg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === state.size));
   const hit = T.sizes.find(z => z[0] === state.size);
-  moq.innerHTML = hit ? `Minimum order <b>${hit[4]} pcs</b>` : 'Custom size · minimum order on request';
+  moq.innerHTML = `${fmt(hit[1])} × ${fmt(hit[2])} × ${fmt(hit[3])} cm · minimum order <b>${hit[4]} pcs</b>`;
 }
 function applySize(label) {
   const z = TYPES[state.type].sizes.find(q => q[0] === label); if (!z) return;
@@ -983,7 +961,6 @@ function applyType(type) {
   document.getElementById('handlesTitle').textContent = cordsOn ? 'Cords' : 'Handles';
   document.getElementById('poseSeg').hidden = !loop;
   document.getElementById('dropRow').hidden = !loop;
-  document.getElementById('hemRow').hidden = T.hem === 0;
   applySize(T.sizes.some(z => z[0] === state.size) ? state.size : T.sizes[0][0]);
 }
 document.getElementById('typeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) applyType(b.dataset.v); });
