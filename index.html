@@ -304,10 +304,7 @@ let L = layout();
 // Bottom-gusset bags (handle, D-cut, string) have no side gusset: the sides pinch into a welded seam above the base.
 function profile(y) {
   const T = TYPES[state.type], g = state.D / 2, H = state.H;
-  if (T.gusset === 'bottom') {
-    const yT = Math.min(H * 0.5, Math.max(state.D * 1.25, 2));
-    return { d: g * (1 - smooth(0, yT, y)), s: 0 };
-  }
+  if (T.gusset === 'bottom') return { d: g * (1 - smooth(0, gussetTop(), y)), s: 0 };
   const y0 = Math.min(g, H * 0.45);
   let fold = (0.82 - 0.6 * state.full) * Math.pow(smooth(y0, H, y), 1.4);
   if (T.handles === 'tshirt') {   // the body stays open; the gusset folds flat up into each handle
@@ -317,6 +314,8 @@ function profile(y) {
   const s = g * fold;
   return { d: Math.sqrt(Math.max(g * g - s * s, 1e-4)), s };
 }
+// Height at which a bottom gusset has closed into the side seam.
+function gussetTop() { return Math.min(state.H * 0.5, Math.max(state.D * 1.25, 2)); }
 // T-shirt bag: the centre of the top is cut away, leaving a handle of width hw on each side.
 function tshirtCut() {
   const { W, H, D } = state;
@@ -371,9 +370,11 @@ function grid(nu, nv, f, hint) {
     col[k * 3] = col[k * 3 + 1] = col[k * 3 + 2] = ao;
   }
   const idx = [];
+  const same = (p, q) => Math.abs(pos[p * 3] - pos[q * 3]) + Math.abs(pos[p * 3 + 1] - pos[q * 3 + 1]) + Math.abs(pos[p * 3 + 2] - pos[q * 3 + 2]) < 1e-9;
+  const tri = (p, q, r) => { if (!same(p, q) && !same(q, r) && !same(r, p)) idx.push(p, q, r); };   // skip zero-area triangles where a gusset closes to a point
   for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) {
     const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1;
-    idx.push(a, b, d, a, d, c);
+    tri(a, b, d); tri(a, d, c);
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -396,19 +397,23 @@ function buildBody() {
   const parts = [];
   parts.push(grid(80, NV, (u, v) => { const x = -W / 2 + u * W, y = v * H; return { p: [x, y, panelZ(x, y, 1)], a: [L.front[0] + u * W, L.front[1] + (1 - v) * H] }; }, [0, 0, 1]));
   parts.push(grid(80, NV, (u, v) => { const x = W / 2 - u * W, y = v * H; return { p: [x, y, -panelZ(x, y, 2)], a: [L.back[0] + u * W, L.back[1] + (1 - v) * H] }; }, [0, 0, -1]));
+  // Every seam uses the same vertices on both sides (no T-junctions, so no hairline cracks):
+  // gussets share the panels' rows, the base shares the panels' columns and the gussets' columns.
+  // A bottom gusset stops on the first panel row where it has closed, instead of collapsing to zero width up to the top.
+  const NG = TYPES[state.type].gusset === 'bottom' ? Math.min(NV, Math.ceil(gussetTop() / (H / NV))) : NV;
   if (D >= 0.5) for (const sx of [1, -1]) for (const half of ['f', 'b']) {
     const R = sx > 0 ? L.right : L.left;
-    parts.push(grid(16, NV, (u, v) => {
-      const y = v * H, { d, s } = profile(y);
+    parts.push(grid(16, NG, (u, v) => {
+      const y = v * NG * H / NV, { d, s } = profile(y);
       // u: panel edge -> crease; each half bows out a little and carries its own small wrinkles
       const bow = ((0.12 + 0.35 * state.full) * (1 - 0.6 * s / g) * Math.sin(Math.PI * u)
                 + 0.06 * fbm(u * 3, y * 0.3, sx * 3 + (half === 'f' ? 1 : 2)) * Math.sin(Math.PI * u)) * (d / g) * smooth(0, 2.5, y);
       const p = [sx * (W / 2 - s * u + bow), y, (half === 'f' ? d : -d) * (1 - u)];
       const fromFront = half === 'f' ? u * g : D - u * g;
-      return { p, a: [R[0] + (sx > 0 ? fromFront : D - fromFront), R[1] + (1 - v) * H] };
+      return { p, a: [R[0] + (sx > 0 ? fromFront : D - fromFront), R[1] + H - y] };
     }, [sx, 0, 0]));
   }
-  if (D >= 0.5) parts.push(grid(30, 12, (u, v) => ({ p: [-W / 2 + u * W, 0, g - v * D], a: [L.bottom[0] + u * W, L.bottom[1] + v * D] }), [0, -1, 0]));
+  if (D >= 0.5) parts.push(grid(80, 32, (u, v) => ({ p: [-W / 2 + u * W, 0, g - v * D], a: [L.bottom[0] + u * W, L.bottom[1] + v * D] }), [0, -1, 0]));
   return mergeGeometries(parts);
 }
 
@@ -1112,7 +1117,7 @@ applyColours();
 applyType('box');
 setView('34', false);
 useSample().then(() => { window.__ready = true; });
-window.__api = { renderer, render: () => render(true), applyType, applySize, state, setView, rebuild, redrawAtlas, camera, controls, composer, gtao, scene };
+window.__api = { renderer, render: () => render(true), applyType, applySize, outer, rim, straps, cords, TYPES, state, setView, rebuild, redrawAtlas, camera, controls, composer, gtao, scene };
 </script>
 </body>
 </html>
