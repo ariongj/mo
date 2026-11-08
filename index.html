@@ -6,7 +6,7 @@
 <title>Non-Woven Bag Configurator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=IBM+Plex+Mono:wght@400;500&family=Montserrat:wght@300;500;700;800;900&family=Oswald:wght@500;700&family=Dancing+Script:wght@700&family=Playfair+Display:wght@700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=IBM+Plex+Mono:wght@400;500&family=Montserrat:wght@300;500;600;700;800;900&family=Oswald:wght@500;700&family=Dancing+Script:wght@700&family=Playfair+Display:wght@700&display=swap">
 <style>
   /* Layout: full-bleed 3D stage, spec-sheet control column on the right (stacks below on phones). */
   :root {
@@ -215,7 +215,7 @@ const FAB_TILE = 1.04;                  // cm covered by one tile of the fabric 
 
 const BAG_COLOURS = [
   ['Red', '#d42a1f'], ['Orange', '#e8641c'], ['Yellow', '#efbf2a'], ['Green', '#2e7d3c'], ['Royal', '#2350b8'],
-  ['Navy', '#1f2b4d'], ['Black', '#1d1d20'], ['Grey', '#8c8e92'], ['White', '#efeee9'], ['Kraft', '#b38858'],
+  ['Navy', '#1f2b4d'], ['Black', '#1d1d20'], ['Grey', '#8c8e92'], ['White', '#efeee9'], ['Kraft', '#bd9665'],
 ];
 const HANDLE_COLOURS = [['Black', '#1b1c20'], ['Match fabric', 'match'], ['White', '#eceae4'], ['Navy', '#1f2b4d'], ['Blue', '#2b4db5']];
 const INK_COLOURS = [['Black', '#1a1a1a'], ['Dark grey', '#4a4a4c'], ['Grey', '#7a7a7c'], ['White', '#f4f3ef'], ['Gold', '#c49a3c'], ['Silver', '#a9adb2'],
@@ -223,7 +223,7 @@ const INK_COLOURS = [['Black', '#1a1a1a'], ['Dark grey', '#4a4a4c'], ['Grey', '#
 // Text styles: [family, weight, label]
 const STYLES = {
   'sans-900': ['Montserrat', 900, 'Montserrat Black'], 'sans-800': ['Montserrat', 800, 'Montserrat Extra Bold'],
-  'sans-700': ['Montserrat', 700, 'Montserrat Bold'], 'sans-500': ['Montserrat', 500, 'Montserrat Medium'],
+  'sans-700': ['Montserrat', 700, 'Montserrat Bold'], 'sans-600': ['Montserrat', 600, 'Montserrat Semi Bold'], 'sans-500': ['Montserrat', 500, 'Montserrat Medium'],
   'sans-300': ['Montserrat', 300, 'Montserrat Light'], 'cond-700': ['Oswald', 700, 'Oswald Bold (condensed)'],
   'script-700': ['Dancing Script', 700, 'Script'], 'serif-700': ['Playfair Display', 700, 'Serif Bold'],
 };
@@ -706,18 +706,23 @@ function tinted(mask, hex) {
   }
   return m.get(hex);
 }
+// Text is drawn in white on a transparent canvas; words wrapped in **double asterisks** are set bolder.
 function textMask(el) {
   const key = `t|${el.style}|${el.track || 0}|${el.text}`;
   if (maskCache.has(key)) return maskCache.get(key);
-  const [fam, weight] = STYLES[el.style] || STYLES['sans-800'], S = 160, lines = (el.text || ' ').split('\n');
-  const c = document.createElement('canvas'), x = c.getContext('2d'), sp = (el.track || 0) * S;
-  const setFont = () => { x.font = `${weight} ${S}px "${fam}", "Helvetica Neue", Arial, sans-serif`; if ('letterSpacing' in x) x.letterSpacing = sp + 'px'; };
-  setFont();
-  const widths = lines.map(l => x.measureText(l || ' ').width), lh = S * 1.12, pad = S * 0.14;
+  const [fam, weight] = STYLES[el.style] || STYLES['sans-800'], S = 160, sp = (el.track || 0) * S;
+  const bold = weight >= 800 ? 900 : weight >= 500 ? 800 : 700;
+  const lines = (el.text || ' ').split('\n').map(l => l.split('**').map((t, i) => [t, i % 2 ? bold : weight]).filter(([t]) => t));
+  const c = document.createElement('canvas'), x = c.getContext('2d');
+  const setFont = w => { x.font = `${w} ${S}px "${fam}", "Helvetica Neue", Arial, sans-serif`; if ('letterSpacing' in x) x.letterSpacing = sp + 'px'; };
+  const lineW = segs => segs.reduce((t, [txt, w]) => { setFont(w); return t + x.measureText(txt).width; }, 0) || S * 0.3;
+  const widths = lines.map(lineW), lh = S * 1.12, pad = S * 0.14;
   c.width = Math.ceil(Math.max(...widths) + pad * 2); c.height = Math.ceil(lines.length * lh + pad);
-  setFont();   // resizing a canvas resets its state
-  x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
-  lines.forEach((l, i) => x.fillText(l, c.width / 2 + sp / 2, pad / 2 + lh * (i + 0.5)));
+  x.fillStyle = '#fff'; x.textBaseline = 'middle';
+  lines.forEach((segs, i) => {
+    let X = (c.width - widths[i]) / 2 + sp / 2;
+    for (const [txt, w] of segs) { setFont(w); x.fillText(txt, X, pad / 2 + lh * (i + 0.5)); X += x.measureText(txt).width; }
+  });
   maskCache.set(key, c); return c;
 }
 function qrMask(data) {
@@ -757,6 +762,38 @@ function clampEl(el) {
   el.x = Math.min(Math.max(el.x, a.x0 + w / 2), a.x1 - w / 2);
   el.y = Math.min(Math.max(el.y, a.y0 + h / 2), a.y1 - h / 2);
 }
+// Ink texture tiles: the emboss dots (one fabric tile, 7 x 8 staggered dots) and a soft mottle, both as alpha.
+const inkDots = (() => {
+  const S = 128, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), px = S / 7, py = S / 8;
+  for (let r = -1; r <= 8; r++) for (let q = -1; q <= 7; q++) {
+    const cx = (q + 0.5) * px + ((r & 1) ? px / 2 : 0), cy = (r + 0.5) * py, g = x.createRadialGradient(cx, cy, 0, cx, cy, px * 0.32);
+    g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(cx - px, cy - py, px * 2, py * 2);
+  }
+  return c;
+})();
+const inkMottle = (() => {
+  const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), img = x.createImageData(S, S);
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+    const v = vnoise(i / 9, j / 9, 31) * 0.55 + vnoise(i / 3, j / 3, 37) * 0.45, k = (j * S + i) * 4;
+    img.data[k + 3] = Math.max(0, Math.min(255, (v * 0.5 + 0.5) ** 2.2 * 255));
+  }
+  x.putImageData(img, 0, 0); return c;
+})();
+const inkLayer = document.createElement('canvas');
+// Printed version of a side for the 3D model: same as drawSide, then thinned where the fabric's dots and fibre gaps are.
+function drawPrinted(ctx, PX, ox, oy, items) {
+  if (!items.length) return;
+  inkLayer.width = Math.ceil(state.W * PX); inkLayer.height = Math.ceil(state.H * PX);
+  const x = inkLayer.getContext('2d');
+  drawSide(x, PX, 0, 0, items);
+  x.save(); x.globalCompositeOperation = 'destination-out';
+  for (const [img, size, alpha] of [[inkDots, FAB_TILE, 0.32], [inkMottle, 6, 0.22]]) {
+    const pat = x.createPattern(img, 'repeat'); pat.setTransform(new DOMMatrix().translate(-ox * PX, -oy * PX).scale(size * PX / img.width));
+    x.globalAlpha = alpha; x.fillStyle = pat; x.fillRect(0, 0, inkLayer.width, inkLayer.height);
+  }
+  x.restore();
+  ctx.drawImage(inkLayer, ox * PX, oy * PX);
+}
 // Draw one side's items onto a panel whose top-left corner is (ox, oy) cm. `gloss` draws the ink shapes for the roughness map.
 function drawSide(ctx, PX, ox, oy, items, gloss = null) {
   for (const el of items) {
@@ -777,6 +814,20 @@ function drawSide(ctx, PX, ox, oy, items, gloss = null) {
 const bumpC = document.createElement('canvas'), roughC = document.createElement('canvas'), alphaC = document.createElement('canvas');
 const bumpTex = new THREE.CanvasTexture(bumpC), roughTex = new THREE.CanvasTexture(roughC), alphaTex = new THREE.CanvasTexture(alphaC);
 const fibres = fibreCanvas();
+const KRAFT = '#bd9665';
+// Kraft non-woven: recycled-look flecks and darker fibres over the base colour.
+const kraftFlecks = (() => {
+  const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, S, S);
+  for (let i = 0; i < 2600; i++) {
+    const px = Math.random() * S, py = Math.random() * S, r = 0.4 + Math.random() ** 3 * 2.2, t = 120 + Math.random() * 90;
+    x.fillStyle = `rgba(${t * 0.75 | 0},${t * 0.55 | 0},${t * 0.35 | 0},${0.35 + Math.random() * 0.5})`;
+    for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) { x.beginPath(); x.ellipse(px + ox, py + oy, r, r * (0.4 + Math.random() * 0.6), Math.random() * 3, 0, Math.PI * 2); x.fill(); }
+  }
+  x.lineWidth = 0.8; x.strokeStyle = 'rgba(120,80,45,0.25)';
+  for (let i = 0; i < 700; i++) { const px = Math.random() * S, py = Math.random() * S, a = Math.random() * 6.3, l = 6 + Math.random() * 18; x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(a) * l, py + Math.sin(a) * l); x.stroke(); }
+  return c;
+})();
 
 function weldRect(ctx, PX, x, y, w, h) {
   weldLine(ctx, PX, x, y, x + w, y); weldLine(ctx, PX, x + w, y, x + w, y + h);
@@ -862,6 +913,7 @@ function redrawAtlas() {
   };
   tile(mottle, PX / 40, 'soft-light', 0.16);
   tile(fibres, PX / 40, 'soft-light', 0.55);
+  if (state.bag === KRAFT) { tile(kraftFlecks, PX / 40, 'multiply', 0.3); tile(mottle, PX / 90, 'soft-light', 0.22); }
   if (TYPES[state.type].handles === 'dcut') {   // the reinforcement patch is a second layer, a touch denser in colour
     const o = dcutHole();
     ctx.save(); ctx.fillStyle = 'rgba(0,0,0,0.05)';
@@ -879,8 +931,8 @@ function redrawAtlas() {
   }
   ctx.save(); ctx.strokeStyle = weldColour(state.bag); ctx.lineCap = 'butt'; ctx.globalAlpha = 0.8;
   drawWelds(ctx, PX); ctx.restore();
-  drawSide(ctx, PX, L.front[0], L.front[1], design.front);
-  drawSide(ctx, PX, L.back[0], L.back[1], design.back);
+  drawPrinted(ctx, PX, L.front[0], L.front[1], design.front);
+  drawPrinted(ctx, PX, L.back[0], L.back[1], design.back);
   atlasTex.needsUpdate = true;
 
   // relief: mid grey is the fabric surface
@@ -983,6 +1035,8 @@ function applyColours() {
   outerMat.sheenColor.set(state.bag).lerp(new THREE.Color(0xffffff), 0.2);
   const hc = state.handle === 'match' ? state.bag : state.handle;
   strapMat.color.set(hc); strapFabMat.color.set(hc); cordMat.color.set(hc);
+  const fabricStrap = TYPES[state.type].strap === 'fabric' || state.handle === 'match';   // straps in the fabric colour are cut from the same non-woven
+  straps.forEach(s => { s.material = fabricStrap ? strapFabMat : strapMat; });
   document.documentElement.style.setProperty('--bagc', state.bag);
   dirty = true;
 }
@@ -994,7 +1048,6 @@ function rebuild() {
   const T = TYPES[state.type];
   straps.forEach((s, i) => {
     s.visible = T.handles === 'loop';
-    s.material = T.strap === 'fabric' ? strapFabMat : strapMat;
     s.geometry.dispose(); s.geometry = s.visible ? buildStrap(i === 0 ? 1 : -1) : new THREE.BufferGeometry();
   });
   rim.visible = TYPES[state.type].handles !== 'tshirt';   // the T-shirt top is a plain cut edge
@@ -1161,11 +1214,11 @@ function toArt(img, name) {
 // ---------------- samples: real KOBAGS products ----------------
 // Positions are fractions of the panel (fx, fy = centre, fw = width) so each sample fits whatever size it is shown at.
 const enhance = (main, sub) => [
-  { text: 'ENHANCE', style: 'sans-500', track: 0.06, fx: 0.5, fy: 0.37, fw: 0.5, ink: main },
-  { text: 'YOUR', style: 'sans-300', track: 0.1, fx: 0.5, fy: 0.465, fw: 0.33, ink: main },
-  { text: 'BRAND', style: 'sans-800', track: 0.02, fx: 0.5, fy: 0.575, fw: 0.58, ink: main },
-  { text: 'WITH KOBAGS', style: 'sans-700', track: 0.04, fx: 0.5, fy: 0.67, fw: 0.36, ink: sub },
-  { text: 'www.kobags-group.com', style: 'sans-500', track: 0.02, fx: 0.5, fy: 0.725, fw: 0.26, ink: sub },
+  { text: 'ENHANCE', style: 'sans-600', track: 0.05, fx: 0.5, fy: 0.35, fw: 0.58, ink: main },
+  { kind: 'graphic', graphic: 'your', fx: 0.5, fy: 0.452, fw: 0.38, ink: main },
+  { text: 'BRAND', style: 'sans-800', track: 0.02, fx: 0.5, fy: 0.565, fw: 0.64, ink: main },
+  { text: 'WITH **KOBAGS**', style: 'sans-500', track: 0.04, fx: 0.5, fy: 0.66, fw: 0.4, ink: main },
+  { text: 'www.kobags-group.com', style: 'sans-500', track: 0.02, fx: 0.5, fy: 0.712, fw: 0.28, ink: sub },
 ];
 const putBrand = (dark, accent) => [
   { text: 'PUT YOUR', style: 'sans-800', fx: 0.5, fy: 0.36, fw: 0.42, ink: dark },
@@ -1182,25 +1235,26 @@ const SAMPLES = [
   { name: 'Laminated black', sub: 'Box bag L · gloss', type: 'box', size: 'L', bag: '#1d1d20', handle: '#1b1c20', finish: 'gloss', ink: '#f4f3ef', front: enhance('#f4f3ef', '#f4f3ef'), back: enhance('#f4f3ef', '#f4f3ef') },
   { name: 'Black · white ink', sub: 'Box bag M · black', type: 'box', size: 'M', bag: '#1d1d20', handle: '#1b1c20', ink: '#f4f3ef', front: enhance('#f4f3ef', '#f4f3ef'), back: enhance('#f4f3ef', '#f4f3ef') },
   { name: 'Grey · white ink', sub: 'Box bag L · grey', type: 'box', size: 'L', bag: '#8c8e92', handle: '#1b1c20', ink: '#f4f3ef', front: enhance('#f4f3ef', '#f4f3ef'), back: enhance('#f4f3ef', '#f4f3ef') },
-  { name: 'Two-sided kraft', sub: 'Box bag M · kraft', type: 'box', size: 'M', bag: '#b38858', handle: 'match', ink: '#e2683a', front: putBrand('#3a3a3c', '#e2683a'), back: enhance('#1a1a1a', '#1a1a1a') },
+  { name: 'Two-sided kraft', sub: 'Box bag M · kraft', type: 'box', size: 'M', bag: '#bd9665', handle: 'match', ink: '#e2683a', front: putBrand('#3a3a3c', '#e2683a'), back: enhance('#1a1a1a', '#1a1a1a') },
   { name: 'Saray', sub: 'Box bag M · red', type: 'box', size: 'M', bag: '#d42a1f', handle: '#1b1c20', ink: '#7a1f18',
     front: [{ text: 'Saray', style: 'serif-700', fx: 0.5, fy: 0.47, fw: 0.56, ink: '#7a1f18' }], back: [{ text: 'Saray', style: 'serif-700', fx: 0.5, fy: 0.47, fw: 0.56, ink: '#7a1f18' }] },
   { name: 'American Beauty Clinic', sub: 'Box bag XL · white', type: 'box', size: 'XL', bag: '#efeee9', handle: '#1b1c20', ink: '#4a4a4c',
     front: [{ kind: 'graphic', graphic: 'crescent', fx: 0.255, fy: 0.5, fw: 0.075, ink: '#4a4a4c' },
             { text: 'AMERICAN', style: 'serif-700', track: 0.04, fx: 0.535, fy: 0.49, fw: 0.44, ink: '#4a4a4c' },
             { text: 'BEAUTY CLINIC', style: 'sans-500', track: 0.25, fx: 0.535, fy: 0.56, fw: 0.25, ink: '#4a4a4c' }], back: [] },
-  { name: 'Papirun', sub: 'Box bag M · kraft', type: 'box', size: 'M', bag: '#b38858', handle: 'match', ink: '#1a1a1a',
-    front: [{ kind: 'graphic', graphic: 'papirun', fx: 0.5, fy: 0.42, fw: 0.15, ink: '#1a1a1a' },
-            { text: 'PAPIRUN', style: 'sans-700', track: 0.14, fx: 0.5, fy: 0.62, fw: 0.5, ink: '#1a1a1a' }], back: [] },
-  { name: 'Full-panel M', sub: 'Box bag L · kraft', type: 'box', size: 'L', bag: '#b38858', handle: 'match', ink: '#e2683a',
+  { name: 'Papirun', sub: 'Box bag M · kraft', type: 'box', size: 'M', bag: '#bd9665', handle: 'match', ink: '#1a1a1a',
+    front: [{ kind: 'graphic', graphic: 'papirun', fx: 0.5, fy: 0.4, fw: 0.2, ink: '#1a1a1a' },
+            { text: 'PAPIRUN', style: 'sans-700', track: 0.14, fx: 0.5, fy: 0.625, fw: 0.58, ink: '#1a1a1a' },
+            { text: '———  LIMITED EDITION  ———', style: 'sans-600', track: 0.12, fx: 0.5, fy: 0.69, fw: 0.36, ink: '#1a1a1a' }], back: [] },
+  { name: 'Full-panel M', sub: 'Box bag L · kraft', type: 'box', size: 'L', bag: '#bd9665', handle: 'match', ink: '#e2683a',
     front: [{ text: 'M', style: 'sans-900', fx: 0.5, fy: 0.56, fw: 0.86, ink: '#e2683a' }], back: [{ text: 'M', style: 'sans-900', fx: 0.5, fy: 0.56, fw: 0.86, ink: '#e2683a' }] },
-  { name: 'Dina · two designs', sub: 'Box bag L · kraft', type: 'box', size: 'L', bag: '#b38858', handle: 'match', ink: DINA,
+  { name: 'Dina · two designs', sub: 'Box bag L · kraft', type: 'box', size: 'L', bag: '#bd9665', handle: 'match', ink: DINA,
     front: [{ text: 'Dina', style: 'sans-900', fx: 0.5, fy: 0.48, fw: 0.88, ink: DINA }, { text: 'Dina-R SUPERMARKET', style: 'sans-800', fx: 0.5, fy: 0.75, fw: 0.62, ink: DINA }],
     back: [{ text: 'Mbushur me', style: 'sans-900', fx: 0.5, fy: 0.42, fw: 0.78, ink: '#3a3a3c' }, { text: "t'mira!", style: 'sans-900', fx: 0.5, fy: 0.6, fw: 0.56, ink: DINA },
            { text: 'Dina-R', style: 'sans-900', fx: 0.76, fy: 0.84, fw: 0.22, ink: DINA }] },
   { name: 'Put your brand', sub: 'D-cut L · white', type: 'dcut', size: 'L', bag: '#efeee9', ink: '#e2683a', front: putBrand('#4a4a4c', '#e2683a'), back: putBrand('#4a4a4c', '#e2683a') },
   { name: 'Black D-cut', sub: 'D-cut L · gold ink', type: 'dcut', size: 'L', bag: '#1d1d20', ink: '#c49a3c', front: enhance('#c49a3c', '#c49a3c'), back: enhance('#c49a3c', '#c49a3c') },
-  { name: 'ECO bottle bag', sub: 'D-cut bottle · kraft', type: 'dcut', size: 'Bottle', bag: '#b38858', ink: '#4c8a3f',
+  { name: 'ECO bottle bag', sub: 'D-cut bottle · kraft', type: 'dcut', size: 'Bottle', bag: '#bd9665', ink: '#4c8a3f',
     front: [{ kind: 'graphic', graphic: 'eco', fx: 0.5, fy: 0.6, fw: 0.78, ink: '#4c8a3f' }], back: [{ kind: 'graphic', graphic: 'eco', fx: 0.5, fy: 0.6, fw: 0.78, ink: '#4c8a3f' }] },
   { name: 'Thank you · orange', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#e2683a', front: heart('#e2683a'), back: heart('#e2683a') },
   { name: 'Thank you · grey', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#7a7a7c', front: heart('#7a7a7c'), back: heart('#7a7a7c') },
@@ -1353,6 +1407,7 @@ function syncProps() {
     else if (el.w < 3.5) { note = 'Make it at least 3.5 cm wide so phones read it through the fabric texture.'; warn = true; }
     else note = 'Scannable size and contrast. Phones read it best on a flat, well-lit panel.';
   } else if (el.kind === 'logo' && el.method === 'full') note = 'Full-colour logos are printed as a heat transfer, so they keep their own colours.';
+  else if (el.kind === 'text') note = 'Put **double asterisks** around words to make them bold. Press Enter for a new line.';
   pNote.textContent = note; pNote.classList.toggle('warn', warn); pNote.hidden = !note;
 }
 pText.addEventListener('input', () => { const el = selected(); if (el) { el.text = pText.value || ' '; clampEl(el); syncProps(); changed(); } });
@@ -1402,11 +1457,34 @@ copyBtn.onclick = () => {
 };
 
 // ---------------- built-in artwork ----------------
+// "YOUR" from the KOBAGS bags: the O is their emblem, three leaves turning in a circle.
+function yourArt() {
+  const S = 200, sp = S * 0.1, c = document.createElement('canvas'), x = c.getContext('2d');
+  const setFont = () => { x.font = `300 ${S}px "Montserrat", "Helvetica Neue", Arial, sans-serif`; if ('letterSpacing' in x) x.letterSpacing = sp + 'px'; };
+  setFont();
+  const wY = x.measureText('Y').width, wUR = x.measureText('UR').width, cap = x.measureText('H').actualBoundingBoxAscent || S * 0.7, d = cap * 1.04, pad = S * 0.14;
+  c.width = Math.ceil(wY + d + sp + wUR + pad * 2); c.height = Math.ceil(S * 1.12 + pad);
+  setFont(); x.fillStyle = x.strokeStyle = '#fff'; x.textBaseline = 'alphabetic';
+  const base = c.height / 2 + cap / 2;
+  x.fillText('Y', pad, base);
+  const cx = pad + wY + d / 2, cy = base - cap / 2, r = d / 2;
+  x.lineWidth = S * 0.045; x.lineCap = 'round';
+  for (let k = 0; k < 3; k++) {
+    x.save(); x.translate(cx, cy); x.rotate(k * Math.PI * 2 / 3 - Math.PI / 2);
+    // each leaf runs along a third of the ring, so the three of them read as the letter O
+    x.beginPath(); x.arc(0, 0, r * 0.94, -0.95, 1.15); x.quadraticCurveTo(r * 0.2, r * 0.25, r * 0.55, -r * 0.76); x.stroke();
+    x.beginPath(); x.moveTo(r * 0.83, r * 0.42); x.quadraticCurveTo(r * 0.55, 0, r * 0.62, -r * 0.55); x.stroke();
+    x.restore();
+  }
+  x.fillText('UR', pad + wY + d + sp, base);
+  return c;
+}
 // Simple line and shape artwork for the client samples (close redraws, not the clients' exact logos).
 function artCanvas(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = x.strokeStyle = '#fff'; draw(x); return c; }
-const papirunIcon = () => artCanvas(520, 560, x => {   // a raised hand: four rounded fingers over a palm
-  for (let i = 0; i < 4; i++) { x.beginPath(); x.roundRect(40 + i * 115, 20, 85, 250, 42); x.fill(); }
-  x.beginPath(); x.roundRect(40, 300, 430, 230, [20, 20, 120, 120]); x.fill();
+const papirunIcon = () => artCanvas(520, 560, x => {   // a raised hand: four rounded fingers, a band, a half-round palm
+  for (let i = 0; i < 4; i++) { x.beginPath(); x.roundRect(40 + i * 115, 20, 85, 220, [42, 42, 8, 8]); x.fill(); }
+  x.beginPath(); x.moveTo(20, 268); x.lineTo(500, 268); x.lineTo(500, 318); x.lineTo(20, 318); x.closePath(); x.fill();
+  x.beginPath(); x.moveTo(40, 350); x.lineTo(480, 350); x.arc(260, 350, 220, 0, Math.PI); x.closePath(); x.fill();
 });
 const crescentIcon = () => artCanvas(400, 400, x => {   // crescent with a leaf, for the clinic logo
   x.beginPath(); x.arc(200, 200, 180, 0, Math.PI * 2); x.fill();
@@ -1505,13 +1583,13 @@ function maskFromImage(img) { const c = document.createElement('canvas'); c.widt
 function fontsReady() {
   const link = document.querySelector('link[href*="fonts.googleapis.com/css2"]');
   const sheet = new Promise(r => { if (!link || link.sheet) r(); else { link.addEventListener('load', r, { once: true }); link.addEventListener('error', r, { once: true }); } });
-  const faces = ['300', '500', '700', '800', '900'].map(w => `${w} 40px "Montserrat"`).concat(['700 40px "Oswald"', '700 40px "Dancing Script"', '700 40px "Playfair Display"']);
+  const faces = ['300', '500', '600', '700', '800', '900'].map(w => `${w} 40px "Montserrat"`).concat(['700 40px "Oswald"', '700 40px "Dancing Script"', '700 40px "Playfair Display"']);
   return Promise.race([sheet.then(() => Promise.all(faces.map(f => document.fonts.load(f)))), new Promise(r => setTimeout(r, 5000))]).catch(() => {});
 }
 // Fonts that arrive late: re-render text and the heart so nothing stays in a fallback font.
 document.fonts?.addEventListener?.('loadingdone', () => {
   if (!window.__ready) return;
-  maskCache.clear(); graphics.heart = heartGraphic(); graphics.eco = ecoArt();
+  maskCache.clear(); graphics.heart = heartGraphic(); graphics.eco = ecoArt(); graphics.your = yourArt();
   for (const k of ['front', 'back']) design[k].forEach(clampEl);
   redrawAtlas(); drawEditor();
 });
@@ -1591,7 +1669,7 @@ if (window.qrcode?.stringToBytesFuncs?.['UTF-8']) window.qrcode.stringToBytes = 
 Promise.all([fontsReady(), loadImage(PRINT_MASK)]).then(([, kivo]) => {
   graphics.kivo = maskFromImage(kivo);
   graphics.heart = heartGraphic();
-  Object.assign(graphics, { papirun: papirunIcon(), crescent: crescentIcon(), eco: ecoArt() });
+  Object.assign(graphics, { papirun: papirunIcon(), crescent: crescentIcon(), eco: ecoArt(), your: yourArt() });
   maskCache.clear();
   loadSample(0);
   setView('34', false);
