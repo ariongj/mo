@@ -129,18 +129,15 @@
         <button data-v="dcut">D-cut</button>
         <button data-v="tshirt">T-shirt</button>
         <button data-v="string">String bag</button>
+        <button data-v="bottle">Bottle bag</button>
       </div>
       <div class="seg" id="sizeSeg" role="group" aria-label="Standard size"></div>
       <p class="moq" id="moq"></p>
     </section>
 
     <section>
-      <h2>Fabric</h2>
+      <h2>Fabric colour</h2>
       <div class="swatches" id="bagSw"></div>
-      <div class="seg" id="finishSeg">
-        <button data-v="matte" class="on">Non-woven</button>
-        <button data-v="gloss">Laminated (gloss)</button>
-      </div>
     </section>
 
     <section id="handlesSec">
@@ -230,22 +227,24 @@ const STYLES = {
 
 // Standard sizes from the GoBack size sheet: [label, width, height, gusset (cm), minimum order].
 const TYPES = {
-  box:    { name: 'Box bag', sub: 'Side gusset · welded webbing handles', gusset: 'side', handles: 'loop', strap: 'webbing', hem: 3.2, py: 0.51, ps: 0.85, handle: '#1b1c20',
+  box:    { name: 'Box bag', fill: 0.28,  sub: 'Side gusset · welded webbing handles', gusset: 'side', handles: 'loop', strap: 'webbing', hem: 3.2, py: 0.51, ps: 0.85, handle: '#1b1c20',
             sizes: [['XS', 20, 26, 12, '3,800'], ['S', 25, 26, 12, '3,300'], ['M', 32, 29.5, 15, '5,300'], ['L', 40, 38.5, 17, '4,400'], ['XL', 47, 42, 20, '3,800']] },
-  handle: { name: 'Handle bag', sub: 'Bottom gusset · fabric loop handles', gusset: 'bottom', handles: 'loop', strap: 'fabric', close: 0.35, hem: 3, py: 0.53, ps: 0.8, handle: 'match',
+  handle: { name: 'Handle bag', fill: 0.12,  sub: 'Bottom gusset · fabric loop handles', gusset: 'bottom', handles: 'loop', strap: 'fabric', close: 0.35, hem: 3, py: 0.53, ps: 0.8, handle: 'match',
             sizes: [['XS', 20, 25, 5, '5,000'], ['S', 25, 29.5, 5, '4,000'], ['M', 35, 33, 8, '2,800'], ['L', 45, 42, 10, '4,000'], ['XL', 55, 44.5, 15, '≈3,500']] },
-  dcut:   { name: 'D-cut bag', sub: 'Die-cut handle with reinforcement patch', gusset: 'bottom', handles: 'dcut', close: 0.85, hem: 0, py: 0.6, ps: 0.72,
-            sizes: [['XS', 20, 25, 0, '5,000'], ['S', 25, 27.5, 5, '4,000'], ['M', 35, 31, 8, '2,800'], ['L', 45, 39, 10, '4,000'], ['XL', 55, 44.5, 10, '≈3,500'], ['Bottle', 14, 38, 9, 'on request']] },
-  tshirt: { name: 'T-shirt bag', sub: 'Vest handles · side gusset', gusset: 'side', handles: 'tshirt', hem: 0, py: 0.68, ps: 0.66,
+  dcut:   { name: 'D-cut bag', fill: 0.08,  sub: 'Die-cut handle with reinforcement patch', gusset: 'bottom', handles: 'dcut', close: 0.85, hem: 0, py: 0.6, ps: 0.72,
+            sizes: [['XS', 20, 25, 0, '5,000'], ['S', 25, 27.5, 5, '4,000'], ['M', 35, 31, 8, '2,800'], ['L', 45, 39, 10, '4,000'], ['XL', 55, 44.5, 10, '≈3,500']] },
+  tshirt: { name: 'T-shirt bag', fill: 0.15,  sub: 'Vest handles · side gusset', gusset: 'side', handles: 'tshirt', hem: 0, py: 0.68, ps: 0.66,
             sizes: [['S', 27, 40, 12, '5,000'], ['M', 27, 50, 12, '4,000'], ['L', 32, 60, 17, '3,300']] },
-  string: { name: 'String bag', sub: 'Drawstring backpack · cord channel', gusset: 'bottom', handles: 'string', close: 0.6, hem: 3, py: 0.55, ps: 0.72, handle: '#1b1c20',
+  bottle: { name: 'Bottle bag', sub: 'Side gusset · die-cut handle', gusset: 'side', handles: 'dcut', hem: 0, topFold: 0.97, foldPow: 1, fill: 0.2,
+            sizes: [['Std', 14, 38, 9, 'on request']] },
+  string: { name: 'String bag', fill: 0.12,  sub: 'Drawstring backpack · cord channel', gusset: 'bottom', handles: 'string', close: 0.6, hem: 3, py: 0.55, ps: 0.72, handle: '#1b1c20',
             sizes: [['XS', 20, 27, 5, '5,000'], ['S', 25, 32.5, 5, '4,000'], ['M', 35, 36, 8, '2,800'], ['L', 45, 45, 10, '4,000'], ['XL', 55, 47.5, 15, '≈3,500']] },
 };
 
 const state = {
   type: 'box', size: 'XS',
   W: 20, H: 26, D: 12, hem: 3.2, drop: 12, full: 0.35, pose: 'relaxed',
-  bag: '#d42a1f', handle: '#1b1c20', finish: 'matte',
+  bag: '#d42a1f', handle: '#1b1c20',
 };
 
 // ---------------- renderer / scene ----------------
@@ -354,13 +353,13 @@ function profile(y) {
   const T = TYPES[state.type], g = state.D / 2, H = state.H;
   if (T.gusset === 'bottom') return { d: g * (1 - smooth(0, gussetTop(), y)), s: 0 };
   const y0 = Math.min(g, H * 0.45);
-  let fold = (0.82 - 0.6 * state.full) * Math.pow(smooth(y0, H, y), 1.4);
-  if (T.handles === 'tshirt') {   // like the real bags: the lower body opens, the top lies flat with the gussets folded in
+  let fold = (T.topFold ?? 0.82 - 0.6 * state.full) * Math.pow(smooth(y0, H, y), T.foldPow ?? 1.4);
+  if (T.handles === 'tshirt') {   // the lower body opens; from the handle base up, the gussets lie folded flat inside the handles
     const b = 0.5 - 0.35 * state.full, yb = tshirtCut().yb;
-    fold = b * smooth(y0, H * 0.4, y) + (0.96 - b) * smooth(H * 0.35, yb, y);
+    fold = b * smooth(y0, H * 0.4, y) + (1 - b) * smooth(H * 0.35, yb - 1, y);
   }
-  const s = g * fold;
-  return { d: Math.sqrt(Math.max(g * g - s * s, 1e-4)), s };
+  const s = g * Math.min(fold, 1);
+  return { d: Math.max(Math.sqrt(Math.max(g * g - s * s, 0)), 0.12), s };   // never closer than the fabric layers' thickness
 }
 // Height at which a bottom gusset has closed into the side seam.
 function gussetTop() { return Math.min(state.H * 0.5, Math.max(state.D * 1.25, 2)); }
@@ -379,10 +378,14 @@ function panelZ(x, y, seed) {
   const { W, H, hem, full } = state, T = TYPES[state.type];
   const ex = 1 - Math.pow(2 * x / W, 2), ey = Math.sin(Math.PI * Math.min(1, Math.max(0, y / H)));
   const edge = smooth(0, 1.4, W / 2 - Math.abs(x));             // keeps the seam with the gusset closed
-  const bulge = (0.3 + 1.8 * full) * ex * Math.pow(ey, 0.8);
+  // T-shirt handles are flat strips: no bulge or buckle from the handle base up
+  const flat = T.handles === 'tshirt' ? 1 - smooth(tshirtCut().yb - 5, tshirtCut().yb - 0.5, y) : 1;
+  const bulge = (0.12 + 1.3 * full) * ex * Math.pow(ey, 0.8) * flat;
   // soft buckling: long, mostly vertical waves plus small surface wrinkles
-  const buckle = (0.34 - 0.2 * full) * fbm(x * 0.15, y * 0.07, seed) * ex * ey
-               + 0.07 * fbm(x * 0.7, y * 0.5, seed + 20) * ex * ey;
+  const buckle = ((0.3 - 0.18 * full) * fbm(x * 0.15, y * 0.07, seed) * ex * ey
+               + 0.06 * fbm(x * 0.7, y * 0.5, seed + 20) * ex * ey) * flat;
+  // bags ship folded flat: the bottom folds up at the gusset's half-depth and leaves a soft pressed line across the panel
+  const fy = Math.min(state.D / 2, H * 0.45), pressed = T.gusset === 'side' ? -0.07 * Math.exp(-(((y - fy) / 0.3) ** 2)) * ex : 0;
   // the folded gusset drags the top corners in, leaving a diagonal crease on each side
   let crease = 0;
   const Lc = Math.min(H * 0.42, 11), dl = Math.hypot(0.5, 1);
@@ -396,12 +399,12 @@ function panelZ(x, y, seed) {
   if (T.gusset === 'bottom') {
     // the base holds the panel out across its width while the side edges pinch in; the mouth stays a little open
     const gw = profile(y).d, g = state.D / 2, exs = Math.pow(Math.max(ex, 0), 0.6);
-    const open = (0.5 + 2.2 * full) * exs * smooth(0, 3, y) * (0.5 + 0.5 * ey);
+    const open = (0.3 + 2 * full) * exs * smooth(0, 3, y) * (0.5 + 0.5 * ey);
     // D-cut and string bags close toward the top (held by the slot, cinched by the cord); handle bags only a little
     const closing = 1 - (T.close || 0) * (1 - 0.5 * full) * smooth(H * 0.45, H, y);
     return (gw + (g - gw) * exs + open) * closing + 0.1 * exs * smooth(0, 3, y) + buckle + hemStep * edge;
   }
-  return profile(y).d + bulge + buckle + ((T.handles === 'tshirt' ? 0 : crease) + hemStep) * edge;
+  return profile(y).d + bulge + buckle + pressed + ((T.handles === 'tshirt' ? 0 : crease) + hemStep) * edge;
 }
 
 function grid(nu, nv, f, hint) {
@@ -796,6 +799,7 @@ function drawPrinted(ctx, PX, ox, oy, items) {
 }
 // Draw one side's items onto a panel whose top-left corner is (ox, oy) cm. `gloss` draws the ink shapes for the roughness map.
 function drawSide(ctx, PX, ox, oy, items, gloss = null) {
+  const base = ctx.globalAlpha;
   for (const el of items) {
     const m = elementMask(el); if (!m) continue;
     const [w, h] = elementSize(el);
@@ -804,7 +808,7 @@ function drawSide(ctx, PX, ox, oy, items, gloss = null) {
       if (el.kind === 'logo' && el.method === 'full') src = assets.get(el.asset).color;
       else { src = tinted(m, el.ink); a = 0.9; }   // screen-print ink lets a little fabric colour through
     }
-    ctx.save(); ctx.globalAlpha = a;
+    ctx.save(); ctx.globalAlpha = base * a;
     ctx.drawImage(src, (ox + el.x - w / 2) * PX, (oy + el.y - h / 2) * PX, w * PX, h * PX);
     ctx.restore();
   }
@@ -853,11 +857,14 @@ function drawWelds(ctx, PX) {
   }
   if (D >= 0.5) for (const R of [L.left, L.right]) {
     const [x, y] = R;
-    if (T.gusset === 'side') {
+    if (T.gusset === 'side' && T.handles === 'tshirt') {
+      // a T-shirt bag is one folded tube: no seams down the sides, only the seal across the handle tops
+      weldLine(ctx, PX, x, y + 0.9, x + D, y + 0.9);
+    } else if (T.gusset === 'side') {
+      // box and bottle bags: the gusset is welded to the front and back along both corners; its centre is only a fold
       const apexY = y + H - Math.min(D / 2, H * 0.45);
       if (hem > 0) weldLine(ctx, PX, x, y + hem, x + D, y + hem);
-      if (T.handles === 'tshirt') weldLine(ctx, PX, x, y + 0.9, x + D, y + 0.9);
-      weldLine(ctx, PX, x + D / 2, y, x + D / 2, apexY);
+      weldLine(ctx, PX, x + 0.15, y + hem, x + 0.15, y + H); weldLine(ctx, PX, x + D - 0.15, y + hem, x + D - 0.15, y + H);
       weldLine(ctx, PX, x, apexY, x + D, apexY);
       weldLine(ctx, PX, x + D / 2, apexY, x, y + H);
       weldLine(ctx, PX, x + D / 2, apexY, x + D, y + H);
@@ -866,7 +873,7 @@ function drawWelds(ctx, PX) {
       weldLine(ctx, PX, x + D / 2, y + H - yT, x + D / 2, y + H);
     }
   }
-  if (D >= 0.5) { const [x, y] = L.bottom; weldLine(ctx, PX, x + 0.4, y, x + 0.4, y + D); weldLine(ctx, PX, x + W - 0.4, y, x + W - 0.4, y + D); }
+  if (D >= 0.5 && T.handles !== 'tshirt') { const [x, y] = L.bottom; weldLine(ctx, PX, x + 0.4, y, x + 0.4, y + D); weldLine(ctx, PX, x + W - 0.4, y, x + W - 0.4, y + D); }
   if (T.handles === 'string') {   // reinforced back corners where the cords are knotted
     const [x, y] = L.back, k = Math.min(4, W * 0.15);
     for (const [cx, dir] of [[x, 1], [x + W, -1]]) {
@@ -929,8 +936,16 @@ function redrawAtlas() {
     for (const R of [L.front, L.back]) for (const sx of [-1, 1]) ctx.fillRect((R[0] + W / 2 + sx * a - sw / 2) * PX, R[1] * PX, sw * PX, (hem - 0.45) * PX);
     ctx.restore();
   }
-  ctx.save(); ctx.strokeStyle = weldColour(state.bag); ctx.lineCap = 'butt'; ctx.globalAlpha = 0.8;
+  ctx.save(); ctx.strokeStyle = weldColour(state.bag); ctx.lineCap = 'butt'; ctx.globalAlpha = 0.6;
   drawWelds(ctx, PX); ctx.restore();
+  if (through > 0.1) {   // thin light fabric: the print on the far panel shows through faintly, mirrored, as in the videos
+    for (const [to, items] of [[L.front, design.back], [L.back, design.front]]) {
+      ctx.save(); ctx.globalAlpha = through * 0.22;
+      ctx.translate((to[0] + W) * PX, 0); ctx.scale(-1, 1);
+      drawSide(ctx, PX, 0, to[1], items);
+      ctx.restore();
+    }
+  }
   drawPrinted(ctx, PX, L.front[0], L.front[1], design.front);
   drawPrinted(ctx, PX, L.back[0], L.back[1], design.back);
   atlasTex.needsUpdate = true;
@@ -946,7 +961,7 @@ function redrawAtlas() {
     const o = dcutHole();
     for (const R of [L.front, L.back]) b.fillRect((R[0] + W / 2 - o.w / 2 - o.pad) * PX, (R[1] + o.top - o.pad) * PX, (o.w + 2 * o.pad) * PX, (o.h + 2 * o.pad) * PX);
   }
-  b.strokeStyle = '#262626'; b.lineCap = 'butt'; drawWelds(b, PX);
+  b.strokeStyle = '#3c3c3c'; b.lineCap = 'butt'; drawWelds(b, PX);
   bumpTex.needsUpdate = true;
 
   // gloss (roughness, read from the green channel): half resolution is plenty
@@ -1018,16 +1033,6 @@ outer.castShadow = outer.receiveShadow = true; inner.receiveShadow = true;
 outer.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, alphaMap: alphaTex, alphaTest: 0.5 });   // shadows respect cut-outs
 for (const s of [...straps, ...cords]) { s.castShadow = s.receiveShadow = true; }
 bag.add(outer, inner, rim, ...straps, ...cords);
-
-// Laminated bags have a gloss film over the fabric (and the print); the inside stays plain non-woven.
-function applyFinish() {
-  const g = state.finish === 'gloss';
-  Object.assign(outerMat, { roughness: g ? 0.42 : 1, clearcoat: g ? 0.8 : 0, clearcoatRoughness: 0.14, sheen: g ? 0 : 0.35, bumpScale: g ? 1.2 : 2.2 });
-  outerMat.normalScale.setScalar(g ? 0.1 : 0.36);
-  Object.assign(rimMat, { roughness: g ? 0.4 : 0.82, clearcoat: g ? 0.8 : 0 });
-  document.querySelectorAll('#finishSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === state.finish));
-  dirty = true;
-}
 
 function applyColours() {
   innerMat.color.set(state.bag).multiplyScalar(0.92);
@@ -1109,10 +1114,6 @@ function swatches(el, list, keyName, after) {
 }
 const syncHandle = swatches('handleSw', HANDLE_COLOURS, 'handle', () => { applyColours(); redrawAtlas(); clearSample(); });
 const syncBag = swatches('bagSw', BAG_COLOURS, 'bag', () => { applyColours(); syncHandle(); redrawAtlas(); drawEditor(); syncProps(); clearSample(); });
-document.getElementById('finishSeg').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  state.finish = b.dataset.v; applyFinish(); clearSample();
-});
 
 const sliderSync = {};
 function slider(id, keyName, show, after) {
@@ -1153,7 +1154,7 @@ function applyType(type) {
   state.type = type;
   document.querySelectorAll('#typeSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === type));
   document.getElementById('typeSub').textContent = T.sub;
-  state.hem = T.hem;
+  state.hem = T.hem; state.full = T.fill ?? 0.2;
   if (T.handle) { state.handle = T.handle; syncHandle(); applyColours(); }
   sizeSeg.innerHTML = '';
   for (const [label, w, h, d] of T.sizes) {
@@ -1232,7 +1233,6 @@ const DINA = '#d33a2c';
 const SAMPLES = [
   { name: 'Enhance your brand', sub: 'Box bag L · white', type: 'box', size: 'L', bag: '#efeee9', handle: '#2b4db5', ink: '#7d9c44', front: enhance('#7d9c44', '#4a4a4c'), back: enhance('#7d9c44', '#4a4a4c') },
   { name: 'Black & gold', sub: 'Box bag L · black', type: 'box', size: 'L', bag: '#1d1d20', handle: '#1b1c20', ink: '#c49a3c', front: enhance('#c49a3c', '#c49a3c'), back: enhance('#c49a3c', '#c49a3c') },
-  { name: 'Laminated black', sub: 'Box bag L · gloss', type: 'box', size: 'L', bag: '#1d1d20', handle: '#1b1c20', finish: 'gloss', ink: '#f4f3ef', front: enhance('#f4f3ef', '#f4f3ef'), back: enhance('#f4f3ef', '#f4f3ef') },
   { name: 'Black · white ink', sub: 'Box bag M · black', type: 'box', size: 'M', bag: '#1d1d20', handle: '#1b1c20', ink: '#f4f3ef', front: enhance('#f4f3ef', '#f4f3ef'), back: enhance('#f4f3ef', '#f4f3ef') },
   { name: 'Grey · white ink', sub: 'Box bag L · grey', type: 'box', size: 'L', bag: '#8c8e92', handle: '#1b1c20', ink: '#f4f3ef', front: enhance('#f4f3ef', '#f4f3ef'), back: enhance('#f4f3ef', '#f4f3ef') },
   { name: 'Two-sided kraft', sub: 'Box bag M · kraft', type: 'box', size: 'M', bag: '#bd9665', handle: 'match', ink: '#e2683a', front: putBrand('#3a3a3c', '#e2683a'), back: enhance('#1a1a1a', '#1a1a1a') },
@@ -1254,7 +1254,7 @@ const SAMPLES = [
            { text: 'Dina-R', style: 'sans-900', fx: 0.76, fy: 0.84, fw: 0.22, ink: DINA }] },
   { name: 'Put your brand', sub: 'D-cut L · white', type: 'dcut', size: 'L', bag: '#efeee9', ink: '#e2683a', front: putBrand('#4a4a4c', '#e2683a'), back: putBrand('#4a4a4c', '#e2683a') },
   { name: 'Black D-cut', sub: 'D-cut L · gold ink', type: 'dcut', size: 'L', bag: '#1d1d20', ink: '#c49a3c', front: enhance('#c49a3c', '#c49a3c'), back: enhance('#c49a3c', '#c49a3c') },
-  { name: 'ECO bottle bag', sub: 'D-cut bottle · kraft', type: 'dcut', size: 'Bottle', bag: '#bd9665', ink: '#4c8a3f',
+  { name: 'ECO bottle bag', sub: 'Bottle bag · kraft', type: 'bottle', size: 'Std', bag: '#bd9665', ink: '#4c8a3f',
     front: [{ kind: 'graphic', graphic: 'eco', fx: 0.5, fy: 0.6, fw: 0.78, ink: '#4c8a3f' }], back: [{ kind: 'graphic', graphic: 'eco', fx: 0.5, fy: 0.6, fw: 0.78, ink: '#4c8a3f' }] },
   { name: 'Thank you · orange', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#e2683a', front: heart('#e2683a'), back: heart('#e2683a') },
   { name: 'Thank you · grey', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#7a7a7c', front: heart('#7a7a7c'), back: heart('#7a7a7c') },
@@ -1274,7 +1274,7 @@ SAMPLES.forEach((s, i) => {
 function clearSample() { samplesEl.querySelectorAll('.sample').forEach(b => b.classList.remove('on')); }
 function loadSample(i) {
   const s = SAMPLES[i];
-  Object.assign(state, { bag: s.bag, finish: s.finish || 'matte', size: s.size });
+  Object.assign(state, { bag: s.bag, size: s.size });
   design.front = []; design.back = [];          // cleared first, so the type change has nothing to rescale
   applyType(s.type);                            // also applies the size and the type's default handle colour
   if (s.handle) state.handle = s.handle;
@@ -1282,7 +1282,7 @@ function loadSample(i) {
     const el = { kind: 'text', ...e, id: nextId++, x: fx * state.W, y: fy * state.H, w: fw * state.W };
     clampEl(el); return el;
   });
-  syncBag(); syncHandle(); applyColours(); applyFinish();
+  syncBag(); syncHandle(); applyColours();
   side = 'front'; selId = null; syncSideUI();
   samplesEl.querySelectorAll('.sample').forEach((b, j) => b.classList.toggle('on', j === i));
   redrawAtlas(); drawEditor(); syncProps(); setView('34');
@@ -1662,7 +1662,7 @@ function render(force = false) {
 }
 renderer.setAnimationLoop(render);
 
-applyColours(); applyFinish();
+applyColours();
 applyType('box');
 setView('34', false);
 if (window.qrcode?.stringToBytesFuncs?.['UTF-8']) window.qrcode.stringToBytes = window.qrcode.stringToBytesFuncs['UTF-8'];   // QR links with accents
