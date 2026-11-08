@@ -6,7 +6,7 @@
 <title>Non-Woven Bag Configurator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=IBM+Plex+Mono:wght@400;500&family=Montserrat:wght@300;500;700;800;900&family=Oswald:wght@500;700&family=Dancing+Script:wght@700&family=Playfair+Display:wght@700&display=swap">
 <style>
   /* Layout: full-bleed 3D stage, spec-sheet control column on the right (stacks below on phones). */
   :root {
@@ -66,10 +66,27 @@
   .check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
   .file input { display: none; }
   .note { margin: 0; color: var(--muted); font-size: 12px; }
-  #artName { font: 12px var(--f-mono); color: var(--muted); overflow-wrap: anywhere; }
   .moq { margin: 0; font: 12px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
   .moq b { color: var(--ink); font-weight: 500; }
   #sizeSeg button { min-width: 44px; font-family: var(--f-mono); }
+  button.ghost { background: transparent; }
+
+  .samples { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .sample { display: flex; align-items: center; gap: 8px; text-align: left; padding: 7px 8px; min-width: 0; }
+  .sample .dot { width: 20px; height: 20px; border-radius: 50%; flex: none; border: 1px solid var(--line); }
+  .sample span { display: grid; min-width: 0; line-height: 1.25; }
+  .sample b { font-weight: 600; font-size: 12.5px; text-wrap: balance; }
+  .sample small { font: 11px var(--f-mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sample.on small { color: inherit; opacity: 0.8; }
+
+  .editor { border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--chip); display: grid; place-items: center; }
+  #editor { touch-action: none; display: block; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18); }
+  #editor:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+  .props { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+  .propsHead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .props textarea, .props select, .props input[type=url] { font: 13px var(--f-body); color: var(--ink); background: var(--chip);
+    border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; width: 100%; resize: vertical; }
+  .warn { color: #b4541c; }
 
   @media (max-width: 760px) {
     #app { flex-direction: column; height: auto; }
@@ -99,6 +116,12 @@
     </header>
 
     <section>
+      <h2>Start from a sample</h2>
+      <div class="samples" id="samples"></div>
+      <p class="note">Real KOBAGS products. Pick one, then change anything below.</p>
+    </section>
+
+    <section>
       <h2>Bag type</h2>
       <div class="seg" id="typeSeg">
         <button data-v="box" class="on">Box bag</button>
@@ -112,8 +135,12 @@
     </section>
 
     <section>
-      <h2>Fabric colour</h2>
+      <h2>Fabric</h2>
       <div class="swatches" id="bagSw"></div>
+      <div class="seg" id="finishSeg">
+        <button data-v="matte" class="on">Non-woven</button>
+        <button data-v="gloss">Laminated (gloss)</button>
+      </div>
     </section>
 
     <section id="handlesSec">
@@ -126,21 +153,34 @@
       <div class="row" id="dropRow"><label for="drop">Handle drop</label><input type="range" id="drop" min="6" max="35" step="0.5" value="12"><output id="o-drop"></output></div>
     </section>
 
-    <section>
-      <h2>Print</h2>
+    <section id="designSec">
+      <h2>Your design</h2>
+      <div class="seg" id="sideSeg" role="group" aria-label="Bag side">
+        <button data-v="front" class="on">Front</button>
+        <button data-v="back">Back</button>
+        <button id="copySide" class="ghost">Copy to back</button>
+      </div>
+      <div class="editor"><canvas id="editor" tabindex="0" aria-label="Print area of the selected side. Drag an item to move it, drag its corner to resize, arrow keys nudge it."></canvas></div>
       <div class="seg">
-        <button id="artSample" class="on">Sample print</button>
-        <label class="file" id="artUpLabel">Upload logo…<input type="file" id="artFile" accept="image/png,image/jpeg,image/webp,image/svg+xml"></label>
+        <button id="addText">+ Text</button>
+        <label class="file">+ Logo<input type="file" id="addLogo" accept="image/png,image/jpeg,image/webp,image/svg+xml"></label>
+        <button id="addQr">+ QR code</button>
       </div>
-      <div id="artName">KIVO logo, lifted from your photo</div>
-      <div class="seg" id="methodSeg">
-        <button data-v="mono" class="on">1-colour screen print</button>
-        <button data-v="full">Full colour</button>
+      <div id="props" class="props" hidden>
+        <div class="propsHead"><b id="propsTitle">Text</b><button id="delItem" class="ghost">Remove</button></div>
+        <textarea id="pText" rows="2" aria-label="Text"></textarea>
+        <select id="pStyle" aria-label="Font"></select>
+        <input id="pQr" type="url" placeholder="https://" aria-label="QR code link">
+        <div class="seg" id="pMethod">
+          <button data-v="mono">1-colour ink</button>
+          <button data-v="full">Full colour</button>
+        </div>
+        <div class="swatches" id="pInk" aria-label="Ink colour"></div>
+        <div class="row"><label for="pSize">Width</label><input type="range" id="pSize" min="1" max="50" step="0.1"><output id="o-pSize"></output></div>
+        <div class="seg"><button id="pCenter">Centre across</button></div>
+        <p class="note" id="pNote"></p>
       </div>
-      <div class="swatches" id="inkSw"></div>
-      <div class="row"><label for="pscale">Print width</label><input type="range" id="pscale" min="0.2" max="0.95" step="0.01" value="0.85"><output id="o-pscale"></output></div>
-      <div class="row"><label for="py">Position</label><input type="range" id="py" min="0.2" max="0.85" step="0.005" value="0.51"><output id="o-py"></output></div>
-      <label class="check"><input type="checkbox" id="printBack"> Print the back panel too</label>
+      <p class="note" id="designNote">Drag to move. Drag the corner square to resize. Arrow keys nudge the selected item. Hatched areas cannot be printed.</p>
     </section>
 
 
@@ -153,6 +193,7 @@
   </aside>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
@@ -174,10 +215,18 @@ const FAB_TILE = 1.04;                  // cm covered by one tile of the fabric 
 
 const BAG_COLOURS = [
   ['Red', '#d42a1f'], ['Orange', '#e8641c'], ['Yellow', '#efbf2a'], ['Green', '#2e7d3c'], ['Royal', '#2350b8'],
-  ['Navy', '#1f2b4d'], ['Black', '#1d1d20'], ['Grey', '#8c8e92'], ['White', '#efeee9'],
+  ['Navy', '#1f2b4d'], ['Black', '#1d1d20'], ['Grey', '#8c8e92'], ['White', '#efeee9'], ['Kraft', '#b38858'],
 ];
-const HANDLE_COLOURS = [['Black', '#1b1c20'], ['Match fabric', 'match'], ['White', '#eceae4'], ['Navy', '#1f2b4d']];
-const INK_COLOURS = [['Black', '#1a1a1a'], ['White', '#f4f3ef'], ['Gold', '#c49a3c'], ['Navy', '#1f2b4d'], ['Red', '#c8231b']];
+const HANDLE_COLOURS = [['Black', '#1b1c20'], ['Match fabric', 'match'], ['White', '#eceae4'], ['Navy', '#1f2b4d'], ['Blue', '#2b4db5']];
+const INK_COLOURS = [['Black', '#1a1a1a'], ['Dark grey', '#4a4a4c'], ['Grey', '#7a7a7c'], ['White', '#f4f3ef'], ['Gold', '#c49a3c'], ['Silver', '#a9adb2'],
+  ['KOBAGS green', '#7d9c44'], ['Green', '#4c8a3f'], ['Orange', '#e2683a'], ['Red', '#d33a2c'], ['Maroon', '#7a1f18'], ['Teal', '#2fa58a'], ['Navy', '#1f2b4d']];
+// Text styles: [family, weight, label]
+const STYLES = {
+  'sans-900': ['Montserrat', 900, 'Montserrat Black'], 'sans-800': ['Montserrat', 800, 'Montserrat Extra Bold'],
+  'sans-700': ['Montserrat', 700, 'Montserrat Bold'], 'sans-500': ['Montserrat', 500, 'Montserrat Medium'],
+  'sans-300': ['Montserrat', 300, 'Montserrat Light'], 'cond-700': ['Oswald', 700, 'Oswald Bold (condensed)'],
+  'script-700': ['Dancing Script', 700, 'Script'], 'serif-700': ['Playfair Display', 700, 'Serif Bold'],
+};
 
 // Standard sizes from the GoBack size sheet: [label, width, height, gusset (cm), minimum order].
 const TYPES = {
@@ -186,7 +235,7 @@ const TYPES = {
   handle: { name: 'Handle bag', sub: 'Bottom gusset · fabric loop handles', gusset: 'bottom', handles: 'loop', strap: 'fabric', close: 0.35, hem: 3, py: 0.53, ps: 0.8, handle: 'match',
             sizes: [['XS', 20, 25, 5, '5,000'], ['S', 25, 29.5, 5, '4,000'], ['M', 35, 33, 8, '2,800'], ['L', 45, 42, 10, '4,000'], ['XL', 55, 44.5, 15, '≈3,500']] },
   dcut:   { name: 'D-cut bag', sub: 'Die-cut handle with reinforcement patch', gusset: 'bottom', handles: 'dcut', close: 0.85, hem: 0, py: 0.6, ps: 0.72,
-            sizes: [['XS', 20, 25, 0, '5,000'], ['S', 25, 27.5, 5, '4,000'], ['M', 35, 31, 8, '2,800'], ['L', 45, 39, 10, '4,000'], ['XL', 55, 44.5, 10, '≈3,500']] },
+            sizes: [['XS', 20, 25, 0, '5,000'], ['S', 25, 27.5, 5, '4,000'], ['M', 35, 31, 8, '2,800'], ['L', 45, 39, 10, '4,000'], ['XL', 55, 44.5, 10, '≈3,500'], ['Bottle', 14, 38, 9, 'on request']] },
   tshirt: { name: 'T-shirt bag', sub: 'Vest handles · side gusset', gusset: 'side', handles: 'tshirt', hem: 0, py: 0.68, ps: 0.66,
             sizes: [['S', 27, 40, 12, '5,000'], ['M', 27, 50, 12, '4,000'], ['L', 32, 60, 17, '3,300']] },
   string: { name: 'String bag', sub: 'Drawstring backpack · cord channel', gusset: 'bottom', handles: 'string', close: 0.6, hem: 3, py: 0.55, ps: 0.72, handle: '#1b1c20',
@@ -196,8 +245,7 @@ const TYPES = {
 const state = {
   type: 'box', size: 'XS',
   W: 20, H: 26, D: 12, hem: 3.2, drop: 12, full: 0.35, pose: 'relaxed',
-  bag: '#d42a1f', handle: '#1b1c20', ink: '#1a1a1a',
-  method: 'mono', pscale: 0.85, py: 0.51, back: false,
+  bag: '#d42a1f', handle: '#1b1c20', finish: 'matte',
 };
 
 // ---------------- renderer / scene ----------------
@@ -307,9 +355,9 @@ function profile(y) {
   if (T.gusset === 'bottom') return { d: g * (1 - smooth(0, gussetTop(), y)), s: 0 };
   const y0 = Math.min(g, H * 0.45);
   let fold = (0.82 - 0.6 * state.full) * Math.pow(smooth(y0, H, y), 1.4);
-  if (T.handles === 'tshirt') {   // the body stays open; the gusset folds flat up into each handle
+  if (T.handles === 'tshirt') {   // like the real bags: the lower body opens, the top lies flat with the gussets folded in
     const b = 0.5 - 0.35 * state.full, yb = tshirtCut().yb;
-    fold = b * smooth(y0, yb, y) + (0.97 - b) * smooth(yb - 3, H, y);
+    fold = b * smooth(y0, H * 0.4, y) + (0.96 - b) * smooth(H * 0.35, yb, y);
   }
   const s = g * fold;
   return { d: Math.sqrt(Math.max(g * g - s * s, 1e-4)), s };
@@ -320,11 +368,11 @@ function gussetTop() { return Math.min(state.H * 0.5, Math.max(state.D * 1.25, 2
 function tshirtCut() {
   const { W, H, D } = state;
   const hw = Math.min(W * 0.4, Math.max(D / 2 + 0.8, W * 0.24)), c = W / 2 - hw;
-  return { hw, c, yb: H * 0.64, e: Math.min(c * 0.75, H * 0.1) };
+  return { hw, c, yb: H * 0.7, r: Math.min(c * 0.5, 4) };   // cut: |x| < c above height yb, corners rounded with radius r
 }
 // D-cut bag: a rounded slot near the top of both panels, inside a welded reinforcement patch.
 function dcutHole() {
-  const { W } = state, w = Math.min(9, W * 0.45), h = 3;
+  const { W } = state, w = Math.min(9, W * 0.62), h = 3;
   return { w, h, top: 2.6, pad: 1.4 };
 }
 function panelZ(x, y, seed) {
@@ -593,8 +641,6 @@ const atlasTex = new THREE.CanvasTexture(atlas);
 atlasTex.colorSpace = THREE.SRGBColorSpace;
 atlasTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 const mottle = mottleCanvas();
-let art = null;                // { mask: canvas (alpha = ink), color: canvas, name }
-const tintCache = new Map();
 
 function weldColour(hex) {
   const c = new THREE.Color(hex), lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
@@ -641,30 +687,58 @@ function weldSquare(ctx, PX, cx, cy, size) {
   ctx.lineWidth = 0.03 * PX; ctx.stroke();
 }
 
-function tinted(hex) {
-  const key = hex + '|' + art.name;
-  if (!tintCache.has(key)) {
-    const c = document.createElement('canvas'); c.width = art.mask.width; c.height = art.mask.height;
-    const x = c.getContext('2d'); x.fillStyle = hex; x.fillRect(0, 0, c.width, c.height);
-    x.globalCompositeOperation = 'destination-in'; x.drawImage(art.mask, 0, 0);
-    tintCache.set(key, c);
-  }
-  return tintCache.get(key);
-}
+// ---------------- design: text, logos and QR codes on each side ----------------
+// Items are stored in cm on their panel: x, y = centre measured from the panel's top-left corner, w = printed width.
+const design = { front: [], back: [] };
+let side = 'front', selId = null, nextId = 1;
+const assets = new Map();        // uploaded logo id -> { mask, color, name }
+const graphics = {};             // built-in artwork name -> mask
+const maskCache = new Map();     // text / QR key -> mask canvas (white where ink goes)
+const tintCache = new WeakMap(); // mask -> Map(colour -> tinted canvas)
 
-function drawPrint(ctx, PX, rect, override = null) {
-  if (!art) return;
-  const [x, y, w, h] = rect;
-  const src = override ? tinted(override) : state.method === 'mono' ? tinted(state.ink) : art.color;
-  const top = printTop() + 0.4, room = h - top - 0.8;            // printable band, measured from the panel top
-  const pw = state.pscale * w, ph = Math.min(pw * src.height / src.width, room);
-  const pw2 = ph * src.width / src.height;
-  const cy = Math.min(Math.max(y + state.py * h, y + top + ph / 2), y + h - ph / 2 - 0.4);
-  ctx.save();
-  ctx.globalAlpha = override ? 1 : state.method === 'mono' ? 0.88 : 1;   // screen-print ink lets a little fabric colour through
-  ctx.drawImage(src, (x + w / 2 - pw2 / 2) * PX, (cy - ph / 2) * PX, pw2 * PX, ph * PX);
-  ctx.restore();
+function tinted(mask, hex) {
+  let m = tintCache.get(mask); if (!m) tintCache.set(mask, m = new Map());
+  if (!m.has(hex)) {
+    const c = document.createElement('canvas'); c.width = mask.width; c.height = mask.height;
+    const x = c.getContext('2d'); x.fillStyle = hex; x.fillRect(0, 0, c.width, c.height);
+    x.globalCompositeOperation = 'destination-in'; x.drawImage(mask, 0, 0);
+    m.set(hex, c);
+  }
+  return m.get(hex);
 }
+function textMask(el) {
+  const key = `t|${el.style}|${el.track || 0}|${el.text}`;
+  if (maskCache.has(key)) return maskCache.get(key);
+  const [fam, weight] = STYLES[el.style] || STYLES['sans-800'], S = 160, lines = (el.text || ' ').split('\n');
+  const c = document.createElement('canvas'), x = c.getContext('2d'), sp = (el.track || 0) * S;
+  const setFont = () => { x.font = `${weight} ${S}px "${fam}", "Helvetica Neue", Arial, sans-serif`; if ('letterSpacing' in x) x.letterSpacing = sp + 'px'; };
+  setFont();
+  const widths = lines.map(l => x.measureText(l || ' ').width), lh = S * 1.12, pad = S * 0.14;
+  c.width = Math.ceil(Math.max(...widths) + pad * 2); c.height = Math.ceil(lines.length * lh + pad);
+  setFont();   // resizing a canvas resets its state
+  x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  lines.forEach((l, i) => x.fillText(l, c.width / 2 + sp / 2, pad / 2 + lh * (i + 0.5)));
+  maskCache.set(key, c); return c;
+}
+function qrMask(data) {
+  const key = 'q|' + data;
+  if (maskCache.has(key)) return maskCache.get(key);
+  if (!window.qrcode) return null;
+  const q = window.qrcode(0, 'M'); q.addData(data || ' '); q.make();
+  const n = q.getModuleCount(), quiet = 2, cell = 16, c = document.createElement('canvas');
+  c.width = c.height = (n + quiet * 2) * cell;
+  const x = c.getContext('2d'); x.fillStyle = '#fff';
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) x.fillRect((k + quiet) * cell, (r + quiet) * cell, cell, cell);
+  maskCache.set(key, c); return c;
+}
+function elementMask(el) {
+  if (el.kind === 'text') return textMask(el);
+  if (el.kind === 'qr') return qrMask(el.data);
+  if (el.kind === 'logo') return assets.get(el.asset)?.mask || null;
+  return graphics[el.graphic] || null;
+}
+function elementSize(el) { const m = elementMask(el); return [el.w, m ? el.w * m.height / m.width : el.w * 0.4]; }
+const minWidth = el => el.kind === 'qr' ? 3 : 1;
 
 function printTop() {   // cm below the top edge where artwork may start
   const T = TYPES[state.type];
@@ -672,13 +746,38 @@ function printTop() {   // cm below the top edge where artwork may start
   if (T.handles === 'dcut') { const o = dcutHole(); return o.top + o.h + o.pad + 0.6; }
   return state.hem;
 }
+function printArea() {
+  const { W, H } = state, bottom = TYPES[state.type].handles === 'tshirt' ? 2 : 1.2;
+  return { x0: 1, x1: W - 1, y0: printTop() + 0.4, y1: H - bottom };
+}
+function clampEl(el) {
+  const a = printArea(); let [w, h] = elementSize(el);
+  const k = Math.min(1, (a.x1 - a.x0) / w, (a.y1 - a.y0) / h);
+  if (k < 1) { el.w *= k; w *= k; h *= k; }
+  el.x = Math.min(Math.max(el.x, a.x0 + w / 2), a.x1 - w / 2);
+  el.y = Math.min(Math.max(el.y, a.y0 + h / 2), a.y1 - h / 2);
+}
+// Draw one side's items onto a panel whose top-left corner is (ox, oy) cm. `gloss` draws the ink shapes for the roughness map.
+function drawSide(ctx, PX, ox, oy, items, gloss = null) {
+  for (const el of items) {
+    const m = elementMask(el); if (!m) continue;
+    const [w, h] = elementSize(el);
+    let src = gloss ? tinted(m, gloss) : null, a = 1;
+    if (!src) {
+      if (el.kind === 'logo' && el.method === 'full') src = assets.get(el.asset).color;
+      else { src = tinted(m, el.ink); a = 0.9; }   // screen-print ink lets a little fabric colour through
+    }
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.drawImage(src, (ox + el.x - w / 2) * PX, (oy + el.y - h / 2) * PX, w * PX, h * PX);
+    ctx.restore();
+  }
+}
 
 // Three maps share one layout: colour, relief (welds pressed in, hem two layers thick) and gloss (melted welds and ink are smoother).
 const bumpC = document.createElement('canvas'), roughC = document.createElement('canvas'), alphaC = document.createElement('canvas');
 const bumpTex = new THREE.CanvasTexture(bumpC), roughTex = new THREE.CanvasTexture(roughC), alphaTex = new THREE.CanvasTexture(alphaC);
 const fibres = fibreCanvas();
 
-function roundRectPath(ctx, PX, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x * PX, y * PX, w * PX, h * PX, r * PX); }
 function weldRect(ctx, PX, x, y, w, h) {
   weldLine(ctx, PX, x, y, x + w, y); weldLine(ctx, PX, x + w, y, x + w, y + h);
   weldLine(ctx, PX, x + w, y + h, x, y + h); weldLine(ctx, PX, x, y + h, x, y);
@@ -726,22 +825,23 @@ function drawWelds(ctx, PX) {
   }
 }
 // Cut-outs (D-cut slot, T-shirt vest top) as an alpha mask: white keeps fabric, black removes it.
-function drawCutouts(ctx, PX) {
+// Outline of the parts cut out of one panel whose top-left corner is (x, y) cm; the caller fills it.
+function cutPath(ctx, PX, x, y) {
   const T = TYPES[state.type], { W, H } = state;
-  ctx.fillStyle = '#000';
-  for (const R of [L.front, L.back]) {
-    const [x, y] = R;
-    if (T.handles === 'dcut') { const o = dcutHole(); roundRectPath(ctx, PX, x + W / 2 - o.w / 2, y + o.top, o.w, o.h, o.h / 2); ctx.fill(); }
-    if (T.handles === 'tshirt') {
-      const t = tshirtCut(), cx = x + W / 2, ty = y + H - (t.yb + t.e);
-      ctx.beginPath();
-      ctx.moveTo((cx - t.c) * PX, (y - 1) * PX);
-      ctx.lineTo((cx - t.c) * PX, ty * PX);
-      ctx.ellipse(cx * PX, ty * PX, t.c * PX, t.e * PX, 0, Math.PI, 0, true);
-      ctx.lineTo((cx + t.c) * PX, (y - 1) * PX);
-      ctx.closePath(); ctx.fill();
-    }
+  ctx.beginPath();
+  if (T.handles === 'dcut') { const o = dcutHole(); ctx.roundRect((x + W / 2 - o.w / 2) * PX, (y + o.top) * PX, o.w * PX, o.h * PX, o.h / 2 * PX); }
+  if (T.handles === 'tshirt') {
+    const t = tshirtCut(), cx = x + W / 2, by = y + H - t.yb;
+    ctx.moveTo((cx - t.c) * PX, (y - 1) * PX);
+    ctx.arcTo((cx - t.c) * PX, by * PX, cx * PX, by * PX, t.r * PX);
+    ctx.arcTo((cx + t.c) * PX, by * PX, (cx + t.c) * PX, (y - 1) * PX, t.r * PX);
+    ctx.lineTo((cx + t.c) * PX, (y - 1) * PX);
+    ctx.closePath();
   }
+}
+function drawCutouts(ctx, PX) {
+  ctx.fillStyle = '#000';
+  for (const R of [L.front, L.back]) { cutPath(ctx, PX, R[0], R[1]); ctx.fill(); }
 }
 
 let PXa = 40;
@@ -768,10 +868,19 @@ function redrawAtlas() {
     for (const R of [L.front, L.back]) ctx.fillRect((R[0] + W / 2 - o.w / 2 - o.pad) * PX, (R[1] + o.top - o.pad) * PX, (o.w + 2 * o.pad) * PX, (o.h + 2 * o.pad) * PX);
     ctx.restore();
   }
+  const lum = new THREE.Color(state.bag).getHSL({}).l;   // thin light fabric lets dark things behind it show through
+  const through = lum > 0.75 ? 0.3 : lum > 0.45 ? 0.14 : 0.05;
+  if (TYPES[state.type].handles === 'loop' && state.handle !== 'match' && through > 0.1) {
+    // the strap ends welded inside the hem show through as soft squares under the weld marks
+    const a = Math.min(0.28 * W, W / 2 - 2), sw = TYPES[state.type].strap === 'fabric' ? 3 : 2.5;
+    ctx.save(); ctx.fillStyle = state.handle; ctx.globalAlpha = through * 1.25;
+    for (const R of [L.front, L.back]) for (const sx of [-1, 1]) ctx.fillRect((R[0] + W / 2 + sx * a - sw / 2) * PX, R[1] * PX, sw * PX, (hem - 0.45) * PX);
+    ctx.restore();
+  }
   ctx.save(); ctx.strokeStyle = weldColour(state.bag); ctx.lineCap = 'butt'; ctx.globalAlpha = 0.8;
   drawWelds(ctx, PX); ctx.restore();
-  drawPrint(ctx, PX, L.front);
-  if (state.back) drawPrint(ctx, PX, L.back);
+  drawSide(ctx, PX, L.front[0], L.front[1], design.front);
+  drawSide(ctx, PX, L.back[0], L.back[1], design.back);
   atlasTex.needsUpdate = true;
 
   // relief: mid grey is the fabric surface
@@ -794,8 +903,8 @@ function redrawAtlas() {
   const r = roughC.getContext('2d');
   r.fillStyle = 'rgb(214,214,214)'; r.fillRect(0, 0, roughC.width, roughC.height);
   r.strokeStyle = 'rgb(150,150,150)'; r.lineCap = 'butt'; drawWelds(r, PX * hs);
-  drawPrint(r, PX * hs, L.front, '#a6a6a6');
-  if (state.back) drawPrint(r, PX * hs, L.back, '#a6a6a6');
+  drawSide(r, PX * hs, L.front[0], L.front[1], design.front, '#a6a6a6');
+  drawSide(r, PX * hs, L.back[0], L.back[1], design.back, '#a6a6a6');
   roughTex.needsUpdate = true;
 
   alphaC.width = roughC.width; alphaC.height = roughC.height;
@@ -804,8 +913,7 @@ function redrawAtlas() {
   drawCutouts(al, PX * hs);
   alphaTex.needsUpdate = true;
 
-  const lum = new THREE.Color(state.bag).getHSL({}).l;   // thin light fabric lets the print show through from inside
-  showThrough.value = lum > 0.75 ? 0.3 : lum > 0.45 ? 0.14 : 0.05;
+  showThrough.value = through;   // and the print shows faintly from inside
   dirty = true;
 }
 
@@ -859,6 +967,16 @@ outer.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RG
 for (const s of [...straps, ...cords]) { s.castShadow = s.receiveShadow = true; }
 bag.add(outer, inner, rim, ...straps, ...cords);
 
+// Laminated bags have a gloss film over the fabric (and the print); the inside stays plain non-woven.
+function applyFinish() {
+  const g = state.finish === 'gloss';
+  Object.assign(outerMat, { roughness: g ? 0.42 : 1, clearcoat: g ? 0.8 : 0, clearcoatRoughness: 0.14, sheen: g ? 0 : 0.35, bumpScale: g ? 1.2 : 2.2 });
+  outerMat.normalScale.setScalar(g ? 0.1 : 0.36);
+  Object.assign(rimMat, { roughness: g ? 0.4 : 0.82, clearcoat: g ? 0.8 : 0 });
+  document.querySelectorAll('#finishSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === state.finish));
+  dirty = true;
+}
+
 function applyColours() {
   innerMat.color.set(state.bag).multiplyScalar(0.92);
   rimMat.color.set(state.bag); rimMat.sheenColor.set(state.bag).lerp(new THREE.Color(0xffffff), 0.2);
@@ -897,6 +1015,7 @@ const VIEWS = {
   front:  { dir: [0, 0.12, 1], ty: 0.5 },
   side:   { dir: [1, 0.12, 0.02], ty: 0.5 },
   top:    { dir: [0.08, 1.5, 0.62], ty: 0.55 },
+  back:   { dir: [-0.62, 0.3, -0.73], ty: 0.5 },
 };
 let tween = null;
 function viewTarget(name) {
@@ -935,10 +1054,12 @@ function swatches(el, list, keyName, after) {
   holder.appendChild(name); sync();
   return sync;
 }
-const syncHandle = swatches('handleSw', HANDLE_COLOURS, 'handle', applyColours);
-swatches('bagSw', BAG_COLOURS, 'bag', () => { applyColours(); syncHandle(); redrawAtlas(); });
-const inkRow = document.getElementById('inkSw');
-swatches('inkSw', INK_COLOURS, 'ink', redrawAtlas);
+const syncHandle = swatches('handleSw', HANDLE_COLOURS, 'handle', () => { applyColours(); redrawAtlas(); clearSample(); });
+const syncBag = swatches('bagSw', BAG_COLOURS, 'bag', () => { applyColours(); syncHandle(); redrawAtlas(); drawEditor(); syncProps(); clearSample(); });
+document.getElementById('finishSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.finish = b.dataset.v; applyFinish(); clearSample();
+});
 
 const sliderSync = {};
 function slider(id, keyName, show, after) {
@@ -951,7 +1072,6 @@ function slider(id, keyName, show, after) {
 const syncAll = () => Object.values(sliderSync).forEach(f => f());
 const cm = v => fmt(v) + ' cm', pct = v => Math.round(v * 100) + '%';
 slider('drop', 'drop', cm, rebuild);
-slider('pscale', 'pscale', pct, redrawAtlas); slider('py', 'py', pct, redrawAtlas);
 document.getElementById('poseSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   state.pose = b.dataset.v;
@@ -964,26 +1084,29 @@ function syncSize() {
   const T = TYPES[state.type];
   sizeSeg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === state.size));
   const hit = T.sizes.find(z => z[0] === state.size);
-  moq.innerHTML = `${fmt(hit[1])} × ${fmt(hit[2])} × ${fmt(hit[3])} cm · minimum order <b>${hit[4]} pcs</b>`;
+  moq.innerHTML = `${fmt(hit[1])} × ${fmt(hit[2])} × ${fmt(hit[3])} cm · minimum order <b>${/\d/.test(hit[4]) ? hit[4] + ' pcs' : hit[4]}</b>`;
 }
 function applySize(label) {
   const z = TYPES[state.type].sizes.find(q => q[0] === label); if (!z) return;
+  const oW = state.W, oH = state.H;
   Object.assign(state, { size: label, W: z[1], H: z[2], D: z[3] });
   if (TYPES[state.type].handles === 'loop') state.drop = Math.min(30, Math.max(10, Math.round(state.H * 0.46)));
-  syncAll(); syncSize(); rebuild(); setView('34');
+  // the design keeps its proportions on the new panel, then stays inside the printable area
+  for (const k of ['front', 'back']) for (const el of design[k]) { el.x *= state.W / oW; el.y *= state.H / oH; el.w *= state.W / oW; clampEl(el); }
+  syncAll(); syncSize(); rebuild(); drawEditor(); syncProps(); setView(side === 'back' ? 'back' : '34');
 }
 function applyType(type) {
   const T = TYPES[type];
   state.type = type;
   document.querySelectorAll('#typeSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === type));
   document.getElementById('typeSub').textContent = T.sub;
-  Object.assign(state, { hem: T.hem, py: T.py, pscale: T.ps });
+  state.hem = T.hem;
   if (T.handle) { state.handle = T.handle; syncHandle(); applyColours(); }
   sizeSeg.innerHTML = '';
   for (const [label, w, h, d] of T.sizes) {
     const b = document.createElement('button'); b.dataset.v = label; b.textContent = label;
     b.title = `${label}: ${w} × ${h} × ${d} cm`;
-    b.onclick = () => applySize(label);
+    b.onclick = () => { applySize(label); clearSample(); };
     sizeSeg.appendChild(b);
   }
   const loop = T.handles === 'loop', cordsOn = T.handles === 'string';
@@ -993,17 +1116,7 @@ function applyType(type) {
   document.getElementById('dropRow').hidden = !loop;
   applySize(T.sizes.some(z => z[0] === state.size) ? state.size : T.sizes[0][0]);
 }
-document.getElementById('typeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) applyType(b.dataset.v); });
-
-document.getElementById('printBack').onchange = e => { state.back = e.target.checked; redrawAtlas(); };
-
-document.getElementById('methodSeg').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  state.method = b.dataset.v;
-  document.querySelectorAll('#methodSeg button').forEach(x => x.classList.toggle('on', x === b));
-  inkRow.hidden = state.method !== 'mono';
-  redrawAtlas();
-});
+document.getElementById('typeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { applyType(b.dataset.v); clearSample(); } });
 
 const envRot = document.getElementById('envRot'), expo = document.getElementById('expo');
 function applyLight() {
@@ -1045,34 +1158,370 @@ function toArt(img, name) {
   mx.putImageData(md, 0, 0);
   return { mask, color, name };
 }
-const artName = document.getElementById('artName');
-async function useSample() {
-  const img = await loadImage(PRINT_MASK);
-  art = toArt(img, 'sample');
-  art.color = tinted('#1a1a1a');
-  artName.textContent = 'KIVO logo, lifted from your photo';
-  document.getElementById('artSample').classList.add('on');
-  redrawAtlas();
+// ---------------- samples: real KOBAGS products ----------------
+// Positions are fractions of the panel (fx, fy = centre, fw = width) so each sample fits whatever size it is shown at.
+const enhance = (main, sub) => [
+  { text: 'ENHANCE', style: 'sans-500', track: 0.06, fx: 0.5, fy: 0.37, fw: 0.5, ink: main },
+  { text: 'YOUR', style: 'sans-300', track: 0.1, fx: 0.5, fy: 0.465, fw: 0.33, ink: main },
+  { text: 'BRAND', style: 'sans-800', track: 0.02, fx: 0.5, fy: 0.575, fw: 0.58, ink: main },
+  { text: 'WITH KOBAGS', style: 'sans-700', track: 0.04, fx: 0.5, fy: 0.67, fw: 0.36, ink: sub },
+  { text: 'www.kobags-group.com', style: 'sans-500', track: 0.02, fx: 0.5, fy: 0.725, fw: 0.26, ink: sub },
+];
+const putBrand = (dark, accent) => [
+  { text: 'PUT YOUR', style: 'sans-800', fx: 0.5, fy: 0.36, fw: 0.42, ink: dark },
+  { text: 'BRAND', style: 'sans-900', fx: 0.5, fy: 0.475, fw: 0.6, ink: accent },
+  { text: 'IN THEIR HAND.', style: 'sans-800', fx: 0.5, fy: 0.585, fw: 0.5, ink: dark },
+  { text: '———  CONTACT US  ———', style: 'sans-700', fx: 0.5, fy: 0.67, fw: 0.42, ink: dark },
+  { text: 'www.kobags-group.com   |   Kobags   |   kobags_group', style: 'sans-500', fx: 0.5, fy: 0.735, fw: 0.74, ink: dark },
+];
+const heart = ink => [{ kind: 'graphic', graphic: 'heart', fx: 0.5, fy: 0.665, fw: 0.66, ink }];
+const DINA = '#d33a2c';
+const SAMPLES = [
+  { name: 'Enhance your brand', sub: 'Box bag L · white', type: 'box', size: 'L', bag: '#efeee9', handle: '#2b4db5', ink: '#7d9c44', front: enhance('#7d9c44', '#4a4a4c'), back: enhance('#7d9c44', '#4a4a4c') },
+  { name: 'Black & gold', sub: 'Box bag L · black', type: 'box', size: 'L', bag: '#1d1d20', handle: '#1b1c20', ink: '#c49a3c', front: enhance('#c49a3c', '#c49a3c'), back: enhance('#c49a3c', '#c49a3c') },
+  { name: 'Laminated black', sub: 'Box bag L · gloss', type: 'box', size: 'L', bag: '#1d1d20', handle: '#1b1c20', finish: 'gloss', ink: '#f4f3ef', front: enhance('#f4f3ef', '#f4f3ef'), back: enhance('#f4f3ef', '#f4f3ef') },
+  { name: 'Black · white ink', sub: 'Box bag M · black', type: 'box', size: 'M', bag: '#1d1d20', handle: '#1b1c20', ink: '#f4f3ef', front: enhance('#f4f3ef', '#f4f3ef'), back: enhance('#f4f3ef', '#f4f3ef') },
+  { name: 'Grey · white ink', sub: 'Box bag L · grey', type: 'box', size: 'L', bag: '#8c8e92', handle: '#1b1c20', ink: '#f4f3ef', front: enhance('#f4f3ef', '#f4f3ef'), back: enhance('#f4f3ef', '#f4f3ef') },
+  { name: 'Two-sided kraft', sub: 'Box bag M · kraft', type: 'box', size: 'M', bag: '#b38858', handle: 'match', ink: '#e2683a', front: putBrand('#3a3a3c', '#e2683a'), back: enhance('#1a1a1a', '#1a1a1a') },
+  { name: 'Saray', sub: 'Box bag M · red', type: 'box', size: 'M', bag: '#d42a1f', handle: '#1b1c20', ink: '#7a1f18',
+    front: [{ text: 'Saray', style: 'serif-700', fx: 0.5, fy: 0.47, fw: 0.56, ink: '#7a1f18' }], back: [{ text: 'Saray', style: 'serif-700', fx: 0.5, fy: 0.47, fw: 0.56, ink: '#7a1f18' }] },
+  { name: 'American Beauty Clinic', sub: 'Box bag XL · white', type: 'box', size: 'XL', bag: '#efeee9', handle: '#1b1c20', ink: '#4a4a4c',
+    front: [{ kind: 'graphic', graphic: 'crescent', fx: 0.255, fy: 0.5, fw: 0.075, ink: '#4a4a4c' },
+            { text: 'AMERICAN', style: 'serif-700', track: 0.04, fx: 0.535, fy: 0.49, fw: 0.44, ink: '#4a4a4c' },
+            { text: 'BEAUTY CLINIC', style: 'sans-500', track: 0.25, fx: 0.535, fy: 0.56, fw: 0.25, ink: '#4a4a4c' }], back: [] },
+  { name: 'Papirun', sub: 'Box bag M · kraft', type: 'box', size: 'M', bag: '#b38858', handle: 'match', ink: '#1a1a1a',
+    front: [{ kind: 'graphic', graphic: 'papirun', fx: 0.5, fy: 0.42, fw: 0.15, ink: '#1a1a1a' },
+            { text: 'PAPIRUN', style: 'sans-700', track: 0.14, fx: 0.5, fy: 0.62, fw: 0.5, ink: '#1a1a1a' }], back: [] },
+  { name: 'Full-panel M', sub: 'Box bag L · kraft', type: 'box', size: 'L', bag: '#b38858', handle: 'match', ink: '#e2683a',
+    front: [{ text: 'M', style: 'sans-900', fx: 0.5, fy: 0.56, fw: 0.86, ink: '#e2683a' }], back: [{ text: 'M', style: 'sans-900', fx: 0.5, fy: 0.56, fw: 0.86, ink: '#e2683a' }] },
+  { name: 'Dina · two designs', sub: 'Box bag L · kraft', type: 'box', size: 'L', bag: '#b38858', handle: 'match', ink: DINA,
+    front: [{ text: 'Dina', style: 'sans-900', fx: 0.5, fy: 0.48, fw: 0.88, ink: DINA }, { text: 'Dina-R SUPERMARKET', style: 'sans-800', fx: 0.5, fy: 0.75, fw: 0.62, ink: DINA }],
+    back: [{ text: 'Mbushur me', style: 'sans-900', fx: 0.5, fy: 0.42, fw: 0.78, ink: '#3a3a3c' }, { text: "t'mira!", style: 'sans-900', fx: 0.5, fy: 0.6, fw: 0.56, ink: DINA },
+           { text: 'Dina-R', style: 'sans-900', fx: 0.76, fy: 0.84, fw: 0.22, ink: DINA }] },
+  { name: 'Put your brand', sub: 'D-cut L · white', type: 'dcut', size: 'L', bag: '#efeee9', ink: '#e2683a', front: putBrand('#4a4a4c', '#e2683a'), back: putBrand('#4a4a4c', '#e2683a') },
+  { name: 'Black D-cut', sub: 'D-cut L · gold ink', type: 'dcut', size: 'L', bag: '#1d1d20', ink: '#c49a3c', front: enhance('#c49a3c', '#c49a3c'), back: enhance('#c49a3c', '#c49a3c') },
+  { name: 'ECO bottle bag', sub: 'D-cut bottle · kraft', type: 'dcut', size: 'Bottle', bag: '#b38858', ink: '#4c8a3f',
+    front: [{ kind: 'graphic', graphic: 'eco', fx: 0.5, fy: 0.6, fw: 0.78, ink: '#4c8a3f' }], back: [{ kind: 'graphic', graphic: 'eco', fx: 0.5, fy: 0.6, fw: 0.78, ink: '#4c8a3f' }] },
+  { name: 'Thank you · orange', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#e2683a', front: heart('#e2683a'), back: heart('#e2683a') },
+  { name: 'Thank you · grey', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#7a7a7c', front: heart('#7a7a7c'), back: heart('#7a7a7c') },
+  { name: 'Thank you · teal', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#2fa58a', front: heart('#2fa58a'), back: heart('#2fa58a') },
+  { name: 'Drawstring', sub: 'String bag M · white', type: 'string', size: 'M', bag: '#efeee9', handle: '#eceae4', ink: '#c49a3c', front: enhance('#c49a3c', '#c49a3c'), back: [] },
+  { name: 'KIVO', sub: 'Box bag XS · red', type: 'box', size: 'XS', bag: '#d42a1f', handle: '#1b1c20', ink: '#1a1a1a', front: [{ kind: 'graphic', graphic: 'kivo', fx: 0.5, fy: 0.53, fw: 0.85, ink: '#1a1a1a' }], back: [] },
+];
+const samplesEl = document.getElementById('samples');
+SAMPLES.forEach((s, i) => {
+  const b = document.createElement('button'); b.className = 'sample';
+  b.innerHTML = '<i class="dot"></i><span><b></b><small></small></span>';
+  b.querySelector('.dot').style.background = `linear-gradient(135deg, ${s.bag} 58%, ${s.ink} 58%)`;
+  b.querySelector('b').textContent = s.name; b.querySelector('small').textContent = s.sub;
+  b.onclick = () => loadSample(i);
+  samplesEl.appendChild(b);
+});
+function clearSample() { samplesEl.querySelectorAll('.sample').forEach(b => b.classList.remove('on')); }
+function loadSample(i) {
+  const s = SAMPLES[i];
+  Object.assign(state, { bag: s.bag, finish: s.finish || 'matte', size: s.size });
+  design.front = []; design.back = [];          // cleared first, so the type change has nothing to rescale
+  applyType(s.type);                            // also applies the size and the type's default handle colour
+  if (s.handle) state.handle = s.handle;
+  for (const k of ['front', 'back']) design[k] = s[k].map(({ fx, fy, fw, ...e }) => {
+    const el = { kind: 'text', ...e, id: nextId++, x: fx * state.W, y: fy * state.H, w: fw * state.W };
+    clampEl(el); return el;
+  });
+  syncBag(); syncHandle(); applyColours(); applyFinish();
+  side = 'front'; selId = null; syncSideUI();
+  samplesEl.querySelectorAll('.sample').forEach((b, j) => b.classList.toggle('on', j === i));
+  redrawAtlas(); drawEditor(); syncProps(); setView('34');
 }
-document.getElementById('artSample').onclick = useSample;
-document.getElementById('artFile').onchange = async e => {
+
+// ---------------- design editor (flat view of one side) ----------------
+const ed = document.getElementById('editor'), edx = ed.getContext('2d');
+const props = document.getElementById('props'), designNote = document.getElementById('designNote');
+const pText = document.getElementById('pText'), pStyle = document.getElementById('pStyle'), pQr = document.getElementById('pQr');
+const pMethod = document.getElementById('pMethod'), pInk = document.getElementById('pInk'), pSize = document.getElementById('pSize');
+const pNote = document.getElementById('pNote'), copyBtn = document.getElementById('copySide');
+let edScale = 10, drag = null, atlasQueued = false;
+const selected = () => design[side].find(e => e.id === selId) || null;
+
+function changed() {   // editor now, 3D on the next frame (dragging stays smooth)
+  drawEditor();
+  if (!atlasQueued) { atlasQueued = true; requestAnimationFrame(() => { atlasQueued = false; redrawAtlas(); }); }
+}
+const hatchCache = {};
+function hatch(dark) {
+  if (!hatchCache[dark]) {
+    const c = document.createElement('canvas'); c.width = c.height = 10;
+    const x = c.getContext('2d'); x.fillStyle = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'; x.fillRect(0, 0, 10, 10);
+    x.strokeStyle = dark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.22)'; x.lineWidth = 1.2;
+    x.beginPath(); x.moveTo(-2, 12); x.lineTo(12, -2); x.moveTo(-2, 2); x.lineTo(2, -2); x.moveTo(8, 12); x.lineTo(12, 8); x.stroke();
+    hatchCache[dark] = c;
+  }
+  return hatchCache[dark];
+}
+function drawEditor() {
+  const { W, H } = state, avail = Math.max(120, ed.parentElement.clientWidth - 18);
+  let s = avail / W; if (H * s > 340) s = 340 / H;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), cw = Math.round(W * s), ch = Math.round(H * s);
+  if (ed.width !== Math.round(cw * dpr) || ed.height !== Math.round(ch * dpr)) { ed.width = Math.round(cw * dpr); ed.height = Math.round(ch * dpr); }
+  ed.style.width = cw + 'px'; ed.style.height = ch + 'px';
+  edScale = s;
+  const P = s * dpr, a = printArea(), dark = new THREE.Color(state.bag).getHSL({}).l < 0.5;
+  edx.setTransform(1, 0, 0, 1, 0, 0);
+  edx.fillStyle = state.bag; edx.fillRect(0, 0, ed.width, ed.height);
+  edx.save(); edx.beginPath(); edx.rect(0, 0, ed.width, ed.height); edx.rect(a.x0 * P, a.y0 * P, (a.x1 - a.x0) * P, (a.y1 - a.y0) * P);
+  edx.fillStyle = edx.createPattern(hatch(dark), 'repeat'); edx.fill('evenodd');
+  edx.setLineDash([4 * dpr, 4 * dpr]); edx.strokeStyle = dark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.3)'; edx.lineWidth = dpr;
+  edx.strokeRect(a.x0 * P, a.y0 * P, (a.x1 - a.x0) * P, (a.y1 - a.y0) * P); edx.restore();
+  edx.save(); edx.fillStyle = cssVar('--chip') || '#fff'; cutPath(edx, P, 0, 0); edx.fill(); edx.restore();   // cut-outs show the page behind
+  drawSide(edx, P, 0, 0, design[side]);
+  const el = selected();
+  if (el) {
+    const [w, h] = elementSize(el), x = (el.x - w / 2) * P, y = (el.y - h / 2) * P, k = 10 * dpr;
+    edx.save(); edx.strokeStyle = cssVar('--focus') || '#2b59c3'; edx.lineWidth = 1.5 * dpr; edx.setLineDash([5 * dpr, 3 * dpr]);
+    edx.strokeRect(x, y, w * P, h * P); edx.setLineDash([]);
+    edx.fillStyle = '#fff'; edx.fillRect(x + w * P - k / 2, y + h * P - k / 2, k, k); edx.strokeRect(x + w * P - k / 2, y + h * P - k / 2, k, k);
+    edx.restore();
+  }
+}
+new ResizeObserver(() => drawEditor()).observe(ed.parentElement);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawEditor());
+
+const edPoint = e => { const r = ed.getBoundingClientRect(); return [(e.clientX - r.left) / edScale, (e.clientY - r.top) / edScale]; };
+function hitTest(x, y) {
+  const s = selected(), tol = 12 / edScale;
+  if (s) { const [w, h] = elementSize(s); if (Math.abs(x - (s.x + w / 2)) < tol && Math.abs(y - (s.y + h / 2)) < tol) return [s, 'resize']; }
+  const items = design[side];
+  for (let i = items.length - 1; i >= 0; i--) { const el = items[i], [w, h] = elementSize(el); if (Math.abs(x - el.x) <= w / 2 && Math.abs(y - el.y) <= h / 2) return [el, 'move']; }
+  return [null, null];
+}
+ed.addEventListener('pointerdown', e => {
+  const [x, y] = edPoint(e), [el, mode] = hitTest(x, y);
+  if (!el) { select(null); return; }
+  select(el.id); ed.setPointerCapture(e.pointerId);
+  drag = { mode, el, x0: x, y0: y, ex: el.x, ey: el.y, w0: el.w };
+});
+ed.addEventListener('pointermove', e => {
+  const [x, y] = edPoint(e);
+  if (!drag) { const [el, mode] = hitTest(x, y); ed.style.cursor = mode === 'resize' ? 'nwse-resize' : el ? 'move' : 'default'; return; }
+  const el = drag.el;
+  if (drag.mode === 'move') { el.x = drag.ex + x - drag.x0; el.y = drag.ey + y - drag.y0; }
+  else el.w = Math.max(minWidth(el), drag.w0 + 2 * (x - drag.x0));   // resizes about the centre
+  clampEl(el); syncProps(); changed();
+});
+const endDrag = () => { drag = null; };
+ed.addEventListener('pointerup', endDrag); ed.addEventListener('pointercancel', endDrag);
+ed.addEventListener('keydown', e => {
+  const el = selected(); if (!el) return;
+  const st = e.shiftKey ? 1 : 0.2, mv = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, -st], ArrowDown: [0, st] }[e.key];
+  if (mv) { el.x += mv[0]; el.y += mv[1]; clampEl(el); syncProps(); changed(); e.preventDefault(); }
+  if (e.key === 'Delete' || e.key === 'Backspace') { removeSelected(); e.preventDefault(); }
+});
+function select(id) { selId = id; syncProps(); drawEditor(); }
+function removeSelected() { design[side] = design[side].filter(e => e.id !== selId); selId = null; syncProps(); changed(); }
+
+// properties of the selected item
+for (const [k, [, , label]] of Object.entries(STYLES)) pStyle.add(new Option(label, k));
+const inkName = document.createElement('span'); inkName.className = 'swname';
+for (const [label, v] of INK_COLOURS) {
+  const b = document.createElement('button'); b.className = 'sw'; b.dataset.v = v; b.title = label; b.setAttribute('aria-label', label);
+  b.style.background = v; b.onclick = () => { const el = selected(); if (el) { el.ink = v; syncProps(); changed(); } };
+  pInk.appendChild(b);
+}
+pInk.appendChild(inkName);
+const relLum = hex => { const c = new THREE.Color(hex); return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b; };   // linear rgb
+function syncProps() {
+  const el = selected(); props.hidden = !el; if (!el) return;
+  document.getElementById('propsTitle').textContent = { text: 'Text', logo: 'Logo', qr: 'QR code', graphic: 'Artwork' }[el.kind];
+  pText.hidden = pStyle.hidden = el.kind !== 'text';
+  if (el.kind === 'text') { if (document.activeElement !== pText) pText.value = el.text; pStyle.value = el.style; }
+  pQr.hidden = el.kind !== 'qr';
+  if (el.kind === 'qr' && document.activeElement !== pQr) pQr.value = el.data;
+  pMethod.hidden = el.kind !== 'logo';
+  pMethod.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === (el.method || 'mono')));
+  pInk.hidden = el.kind === 'logo' && el.method === 'full';
+  pInk.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.v === el.ink));
+  inkName.textContent = (INK_COLOURS.find(([, v]) => v === el.ink) || [el.ink])[0];
+  const a = printArea();
+  pSize.min = minWidth(el); pSize.max = (a.x1 - a.x0).toFixed(1); pSize.value = el.w;
+  document.getElementById('o-pSize').textContent = fmt(el.w) + ' cm';
+  let note = '', warn = false;
+  if (el.kind === 'qr') {
+    const li = relLum(el.ink), lf = relLum(state.bag), ratio = (Math.max(li, lf) + 0.05) / (Math.min(li, lf) + 0.05);
+    if (!window.qrcode) { note = 'The QR code generator did not load. Check the internet connection and reload the page.'; warn = true; }
+    else if (ratio < 3) { note = 'Low contrast with the fabric, so phones may not read this QR code. Pick a darker or lighter ink.'; warn = true; }
+    else if (li > lf) { note = 'Light ink on dark fabric makes an inverted QR code, which some phones cannot read. Scan a sample before ordering.'; warn = true; }
+    else if (el.w < 3.5) { note = 'Make it at least 3.5 cm wide so phones read it through the fabric texture.'; warn = true; }
+    else note = 'Scannable size and contrast. Phones read it best on a flat, well-lit panel.';
+  } else if (el.kind === 'logo' && el.method === 'full') note = 'Full-colour logos are printed as a heat transfer, so they keep their own colours.';
+  pNote.textContent = note; pNote.classList.toggle('warn', warn); pNote.hidden = !note;
+}
+pText.addEventListener('input', () => { const el = selected(); if (el) { el.text = pText.value || ' '; clampEl(el); syncProps(); changed(); } });
+pStyle.addEventListener('change', () => { const el = selected(); if (el) { el.style = pStyle.value; clampEl(el); changed(); } });
+pQr.addEventListener('input', () => { const el = selected(); if (el) { el.data = pQr.value.trim() || ' '; clampEl(el); changed(); } });
+pMethod.addEventListener('click', e => { const b = e.target.closest('button'), el = selected(); if (b && el) { el.method = b.dataset.v; syncProps(); changed(); } });
+pSize.addEventListener('input', () => { const el = selected(); if (el) { el.w = +pSize.value; clampEl(el); syncProps(); changed(); } });
+document.getElementById('pCenter').onclick = () => { const el = selected(); if (el) { el.x = state.W / 2; clampEl(el); changed(); } };
+document.getElementById('delItem').onclick = removeSelected;
+
+// adding items
+const defaultInk = () => relLum(state.bag) > 0.3 ? '#1a1a1a' : '#f4f3ef';
+function addItem(el) {
+  const a = printArea();
+  el = { id: nextId++, x: (a.x0 + a.x1) / 2, y: (a.y0 + a.y1) / 2, ink: defaultInk(), ...el };
+  clampEl(el); design[side].push(el); selId = el.id; syncProps(); changed();
+}
+document.getElementById('addText').onclick = () => addItem({ kind: 'text', text: 'Your text', style: 'sans-800', track: 0.02, w: Math.min(14, state.W * 0.5) });
+document.getElementById('addQr').onclick = () => {   // QR codes usually sit in a lower corner, clear of the main artwork
+  const a = printArea(); addItem({ kind: 'qr', data: 'https://www.kobags-group.com', w: 4.5, x: a.x1 - 2.25, y: a.y1 - 2.25 });
+};
+document.getElementById('addLogo').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
-    const img = await loadImage(URL.createObjectURL(f));
-    art = toArt(img, f.name + ':' + f.size);
-    artName.textContent = f.name;
-    document.getElementById('artSample').classList.remove('on');
-    redrawAtlas();
-  } catch { artName.textContent = 'That file could not be read as an image. Try a PNG, JPG or SVG.'; }
+    const img = await loadImage(URL.createObjectURL(f)), id = 'logo' + nextId++;
+    assets.set(id, toArt(img, f.name));
+    addItem({ kind: 'logo', asset: id, method: 'mono', w: Math.min(12, state.W * 0.45) });
+    designNote.textContent = `Added ${f.name}. Drag it into place.`;
+  } catch { designNote.textContent = 'That file could not be read as an image. Try a PNG, JPG or SVG.'; }
   e.target.value = '';
 };
+
+// front / back
+function syncSideUI() {
+  document.querySelectorAll('#sideSeg button[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === side));
+  copyBtn.textContent = side === 'front' ? 'Copy to back' : 'Copy to front';
+}
+document.getElementById('sideSeg').addEventListener('click', e => {
+  const b = e.target.closest('button[data-v]'); if (!b) return;
+  side = b.dataset.v; selId = null; syncSideUI(); syncProps(); drawEditor();
+  setView(side === 'back' ? 'back' : '34');   // turn the bag to the side being edited
+});
+copyBtn.onclick = () => {
+  const other = side === 'front' ? 'back' : 'front';
+  design[other] = design[side].map(e => ({ ...e, id: nextId++ }));
+  changed(); designNote.textContent = `The ${other} now has the same design as the ${side}.`;
+};
+
+// ---------------- built-in artwork ----------------
+// Simple line and shape artwork for the client samples (close redraws, not the clients' exact logos).
+function artCanvas(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = x.strokeStyle = '#fff'; draw(x); return c; }
+const papirunIcon = () => artCanvas(520, 560, x => {   // a raised hand: four rounded fingers over a palm
+  for (let i = 0; i < 4; i++) { x.beginPath(); x.roundRect(40 + i * 115, 20, 85, 250, 42); x.fill(); }
+  x.beginPath(); x.roundRect(40, 300, 430, 230, [20, 20, 120, 120]); x.fill();
+});
+const crescentIcon = () => artCanvas(400, 400, x => {   // crescent with a leaf, for the clinic logo
+  x.beginPath(); x.arc(200, 200, 180, 0, Math.PI * 2); x.fill();
+  x.globalCompositeOperation = 'destination-out'; x.beginPath(); x.arc(250, 185, 150, 0, Math.PI * 2); x.fill();
+  x.globalCompositeOperation = 'source-over'; x.beginPath(); x.ellipse(215, 215, 70, 34, -0.8, 0, Math.PI * 2); x.fill();
+});
+const ecoArt = () => artCanvas(600, 1500, x => {      // line drawings for the kraft bottle bag
+  x.lineWidth = 12; x.lineCap = x.lineJoin = 'round';
+  // tree
+  for (const [cx, cy, r] of [[300, 170, 95], [215, 230, 80], [385, 230, 80], [300, 290, 85]]) { x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.stroke(); }
+  x.beginPath(); x.moveTo(300, 370); x.lineTo(300, 470); x.moveTo(300, 420); x.lineTo(255, 380); x.moveTo(300, 405); x.lineTo(340, 370); x.stroke();
+  // ECO
+  x.font = '700 190px "Montserrat", sans-serif'; x.textAlign = 'center'; x.lineWidth = 10; x.strokeText('ECO', 300, 700);
+  // sun
+  x.lineWidth = 12; x.beginPath(); x.arc(300, 900, 85, 0, Math.PI * 2); x.stroke();
+  for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; x.beginPath(); x.moveTo(300 + Math.cos(a) * 115, 900 + Math.sin(a) * 115); x.lineTo(300 + Math.cos(a) * 160, 900 + Math.sin(a) * 160); x.stroke(); }
+  // bicycle
+  x.beginPath(); x.arc(170, 1300, 95, 0, Math.PI * 2); x.moveTo(525, 1300); x.arc(430, 1300, 95, 0, Math.PI * 2); x.stroke();
+  x.beginPath(); x.moveTo(170, 1300); x.lineTo(270, 1170); x.lineTo(390, 1170); x.lineTo(430, 1300); x.moveTo(170, 1300); x.lineTo(300, 1300); x.lineTo(390, 1170);
+  x.moveTo(270, 1170); x.lineTo(300, 1300); x.moveTo(250, 1140); x.lineTo(300, 1140); x.moveTo(390, 1170); x.lineTo(380, 1120); x.lineTo(420, 1110); x.stroke();
+  // leaves
+  for (const [cx, cy, a] of [[110, 560, -0.6], [500, 1020, 0.6], [100, 1050, -0.4]]) { x.save(); x.translate(cx, cy); x.rotate(a); x.beginPath(); x.ellipse(0, 0, 70, 28, 0, 0, Math.PI * 2); x.moveTo(-70, 0); x.lineTo(70, 0); x.stroke(); x.restore(); }
+});
+// "Thank you" in many languages, set in a heart like the KOBAGS T-shirt bags.
+function heartGraphic() {
+  const S = 1400, c = document.createElement('canvas'); c.width = S; c.height = S;
+  const x = c.getContext('2d'), pts = [];
+  for (let i = 0; i < 480; i++) { const t = i / 480 * Math.PI * 2; pts.push([16 * Math.sin(t) ** 3, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))]); }
+  const minY = Math.min(...pts.map(p => p[1])), k = S * 0.92 / 32;
+  const P = pts.map(([px, py]) => [S / 2 + px * k, (py - minY) * k + S * 0.02]);
+  const span = y => {
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < P.length; i++) {
+      const a = P[i], b = P[(i + 1) % P.length];
+      if ((a[1] - y) * (b[1] - y) <= 0 && a[1] !== b[1]) { const X = a[0] + (y - a[1]) / (b[1] - a[1]) * (b[0] - a[0]); lo = Math.min(lo, X); hi = Math.max(hi, X); }
+    }
+    return [lo, hi];
+  };
+  // Rows are either a line of words, or a big word with two small words stacked on each side (like THANK and YOU on the real bag).
+  // k is the row's height relative to the others; rows grow to fill the outline, then the stack is rescaled to the heart's height.
+  const ROWS = [
+    { words: [['Gracias', 's'], ['XIEXIE', 'b'], ['Merci', 's']], k: 1 },
+    { words: [['DANKE', 'b'], ['SHUKRAN', 'b']], k: 1.3 },
+    { big: 'THANK', left: ['HVALA', 'KIITOS'], right: ['OBRIGADO', 'TERIMA KASIH'], k: 2.1 },
+    { big: 'YOU', left: ['ARIGATO', 'DEKUJI'], right: ['SALAMAT', 'TACK'], k: 1.9 },
+    { words: [['FALEMINDERIT', 'b']], k: 1.1 },
+    { words: [['KOSZONOM', 'b'], ['MULTUMESC', 'b']], k: 0.75 },
+    { words: [['TESEKKUR EDERIM', 'b']], k: 0.65 },
+    { words: [['DANK U', 'b']], k: 0.6 },
+  ];
+  const font = (st, size) => st === 's' ? `700 ${size * 1.2}px "Dancing Script", cursive` : `700 ${size}px "Oswald", "Arial Narrow", sans-serif`;
+  const tw = (t, st, size) => { x.font = font(st, size); return x.measureText(t).width; };
+  const SMALL = 0.46, GAPX = 0.22;
+  const col = (ws, size) => Math.max(...ws.map(t => tw(t, 'b', size * SMALL)));
+  const width = (row, size) => row.big
+    ? col(row.left, size) + tw(row.big, 'b', size) + col(row.right, size) + 2 * GAPX * size
+    : row.words.reduce((w, [t, st]) => w + tw(t, st, size), 0) + (row.words.length - 1) * size * 0.26;
+  x.font = font('b', 100); const capK = x.measureText('H').actualBoundingBoxAscent / 100 || 0.78, gap = 1.14;
+  const top = Math.min(...P.map(p => p[1])), bottom = Math.max(...P.map(p => p[1])), hh = bottom - top;
+  const yA = top + hh * 0.08, yB = top + hh * 0.9;
+  let scale = (yB - yA) / ROWS.reduce((t, r) => t + r.k * capK * gap, 0), plan = [];
+  for (let it = 0; it < 8; it++) {
+    plan = []; let y = yA;
+    for (const row of ROWS) {
+      const want = row.k * scale, [lo, hi] = span(y + want * capK * 0.5);
+      if (!(hi > lo)) { y += want * capK * gap; continue; }
+      const fit = (hi - lo) * 0.96 / width(row, 1), size = Math.min(Math.max(fit, want * 0.6), want * 1.6);
+      const sx = Math.min(Math.max((hi - lo) * 0.96 / width(row, size), 0.8), 1.25);
+      plan.push({ row, size, sx, cx: (lo + hi) / 2, base: y + size * capK });
+      y += size * capK * gap;
+    }
+    scale *= (yB - yA) / (y - yA);
+  }
+  x.fillStyle = '#fff';
+  for (const { row, size, sx, cx, base } of plan) {
+    x.save(); x.translate(cx, 0); x.scale(sx, 1);
+    let X = -width(row, size) / 2;
+    if (row.big) {
+      const s2 = size * SMALL, lw = col(row.left, size), up = base - size * capK * 0.56;
+      x.textAlign = 'right'; x.font = font('b', s2); x.fillText(row.left[0], X + lw, up); x.fillText(row.left[1], X + lw, base);
+      X += lw + GAPX * size; x.textAlign = 'left'; x.font = font('b', size); x.fillText(row.big, X, base);
+      X += tw(row.big, 'b', size) + GAPX * size; x.font = font('b', s2); x.fillText(row.right[0], X, up); x.fillText(row.right[1], X, base);
+    } else {
+      for (const [t, st] of row.words) { x.font = font(st, size); x.fillText(t, X, base); X += x.measureText(t).width + size * 0.26; }
+    }
+    x.restore();
+  }
+  // crop to the drawn words
+  const d = x.getImageData(0, 0, S, S).data; let x0 = S, y0 = S, x1 = 0, y1 = 0;
+  for (let j = 0; j < S; j += 2) for (let i = 0; i < S; i += 2) if (d[(j * S + i) * 4 + 3] > 20) { x0 = Math.min(x0, i); x1 = Math.max(x1, i); y0 = Math.min(y0, j); y1 = Math.max(y1, j); }
+  const o = document.createElement('canvas'); o.width = x1 - x0 + 12; o.height = y1 - y0 + 12;
+  o.getContext('2d').drawImage(c, x0 - 6, y0 - 6, o.width, o.height, 0, 0, o.width, o.height);
+  return o;
+}
+function maskFromImage(img) { const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; c.getContext('2d').drawImage(img, 0, 0); return c; }
+function fontsReady() {
+  const link = document.querySelector('link[href*="fonts.googleapis.com/css2"]');
+  const sheet = new Promise(r => { if (!link || link.sheet) r(); else { link.addEventListener('load', r, { once: true }); link.addEventListener('error', r, { once: true }); } });
+  const faces = ['300', '500', '700', '800', '900'].map(w => `${w} 40px "Montserrat"`).concat(['700 40px "Oswald"', '700 40px "Dancing Script"', '700 40px "Playfair Display"']);
+  return Promise.race([sheet.then(() => Promise.all(faces.map(f => document.fonts.load(f)))), new Promise(r => setTimeout(r, 5000))]).catch(() => {});
+}
+// Fonts that arrive late: re-render text and the heart so nothing stays in a fallback font.
+document.fonts?.addEventListener?.('loadingdone', () => {
+  if (!window.__ready) return;
+  maskCache.clear(); graphics.heart = heartGraphic(); graphics.eco = ecoArt();
+  for (const k of ['front', 'back']) design[k].forEach(clampEl);
+  redrawAtlas(); drawEditor();
+});
 
 // ---------------- save image ----------------
 const downloadsP = window.claude?.use ? window.claude.use('downloads') : Promise.resolve(null);
 document.getElementById('shot').onclick = async () => {
   render(true);
   const blob = await new Promise(r => renderer.domElement.toBlob(r, 'image/png'));
-  const name = `tote-${fmt(state.W)}x${fmt(state.H)}x${fmt(state.D)}.png`;
+  const name = `${TYPES[state.type].name.toLowerCase().replace(/[^a-z]+/g, '-')}-${state.size}-${side}.png`;
   const dl = await downloadsP;
   if (dl) { try { await dl.save({ filename: name, data: blob }); } catch (err) { /* declined or unavailable */ } return; }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
@@ -1088,6 +1537,28 @@ gtao.normalMaterial.side = THREE.DoubleSide;   // the inside of the bag is drawn
 gtao.updateGtaoMaterial({ radius: 0.045, distanceExponent: 1.6, thickness: 0.03, scale: 1.15, samples: 16, distanceFallOff: 1 });
 gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 5, rings: 2, samples: 16 });
 gtao.blendIntensity = 0.9;
+// The AO pass draws every object with one normals material, which ignores the cut-out mask, so the T-shirt cut and
+// the D-cut slot showed a grey "ghost" of the missing fabric. Give the bag panels a normals material with the same holes.
+const cutNormalMat = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide, blending: THREE.NoBlending });
+cutNormalMat.alphaMap = alphaTex;   // not a constructor option for this material, but three.js still compiles and feeds it when set
+cutNormalMat.onBeforeCompile = sh => {
+  sh.fragmentShader = sh.fragmentShader
+    .replace('#include <uv_pars_fragment>', '#include <uv_pars_fragment>\n#include <alphamap_pars_fragment>')
+    .replace('#include <normal_fragment_begin>', '#ifdef USE_ALPHAMAP\n\tif ( texture2D( alphaMap, vAlphaMapUv ).g < 0.5 ) discard;\n#endif\n#include <normal_fragment_begin>');
+};
+cutNormalMat.customProgramCacheKey = () => 'bag-cut-normals';
+const baseOverride = gtao.renderOverride.bind(gtao), ccSave = new THREE.Color();
+gtao.renderOverride = (r, overrideMaterial, target, clearColor, clearAlpha) => {
+  if (overrideMaterial !== gtao.normalMaterial) return baseOverride(r, overrideMaterial, target, clearColor, clearAlpha);
+  const saved = [];
+  scene.traverse(o => { if (o.isMesh) { saved.push([o, o.material]); o.material = (o === outer || o === inner) ? cutNormalMat : gtao.normalMaterial; } });
+  r.getClearColor(ccSave); const ca = r.getClearAlpha(), ac = r.autoClear;
+  r.setRenderTarget(target); r.autoClear = false;
+  r.setClearColor(clearColor); r.setClearAlpha(clearAlpha || 0); r.clear();
+  r.render(scene, camera);
+  r.autoClear = ac; r.setClearColor(ccSave); r.setClearAlpha(ca);
+  for (const [o, m] of saved) o.material = m;
+};
 composer.addPass(gtao);
 composer.addPass(new OutputPass());
 
@@ -1113,11 +1584,20 @@ function render(force = false) {
 }
 renderer.setAnimationLoop(render);
 
-applyColours();
+applyColours(); applyFinish();
 applyType('box');
 setView('34', false);
-useSample().then(() => { window.__ready = true; });
-window.__api = { renderer, render: () => render(true), applyType, applySize, outer, rim, straps, cords, TYPES, state, setView, rebuild, redrawAtlas, camera, controls, composer, gtao, scene };
+if (window.qrcode?.stringToBytesFuncs?.['UTF-8']) window.qrcode.stringToBytes = window.qrcode.stringToBytesFuncs['UTF-8'];   // QR links with accents
+Promise.all([fontsReady(), loadImage(PRINT_MASK)]).then(([, kivo]) => {
+  graphics.kivo = maskFromImage(kivo);
+  graphics.heart = heartGraphic();
+  Object.assign(graphics, { papirun: papirunIcon(), crescent: crescentIcon(), eco: ecoArt() });
+  maskCache.clear();
+  loadSample(0);
+  setView('34', false);
+  window.__ready = true;
+});
+window.__api = { renderer, render: () => render(true), gtao, applyType, applySize, loadSample, SAMPLES, design, select, drawEditor, printArea, elementSize, getSide: () => side, outer, rim, straps, cords, TYPES, state, setView, rebuild, redrawAtlas, camera, controls, composer, gtao, scene };
 </script>
 </body>
 </html>
