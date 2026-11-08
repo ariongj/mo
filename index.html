@@ -354,9 +354,11 @@ function profile(y) {
   if (T.gusset === 'bottom') return { d: g * (1 - smooth(0, gussetTop(), y)), s: 0 };
   const y0 = Math.min(g, H * 0.45);
   let fold = (T.topFold ?? 0.82 - 0.6 * state.full) * Math.pow(smooth(y0, H, y), T.foldPow ?? 1.4);
-  if (T.handles === 'tshirt') {   // the lower body opens; from the handle base up, the gussets lie folded flat inside the handles
-    const b = 0.5 - 0.35 * state.full, yb = tshirtCut().yb;
-    fold = b * smooth(y0, H * 0.4, y) + (1 - b) * smooth(H * 0.35, yb - 1, y);
+  if (T.handles === 'tshirt') {
+    // a T-shirt bag is a flat folded tube: sealed flat across the bottom, a little open in the body, flat in the handles
+    const yb = tshirtCut().yb, open = (0.5 + 3 * state.full) * smooth(0, H * 0.18, y) * (1 - smooth(H * 0.3, yb - 1, y));
+    const d = 0.12 + Math.min(open, g * 0.9);
+    return { d, s: Math.sqrt(Math.max(g * g - d * d, 0)) };
   }
   const s = g * Math.min(fold, 1);
   return { d: Math.max(Math.sqrt(Math.max(g * g - s * s, 0)), 0.12), s };   // never closer than the fabric layers' thickness
@@ -366,8 +368,8 @@ function gussetTop() { return Math.min(state.H * 0.5, Math.max(state.D * 1.25, 2
 // T-shirt bag: the centre of the top is cut away, leaving a handle of width hw on each side.
 function tshirtCut() {
   const { W, H, D } = state;
-  const hw = Math.min(W * 0.4, Math.max(D / 2 + 0.8, W * 0.24)), c = W / 2 - hw;
-  return { hw, c, yb: H * 0.7, r: Math.min(c * 0.5, 4) };   // cut: |x| < c above height yb, corners rounded with radius r
+  const hw = Math.min(W * 0.4, Math.max(D / 2 + 0.8, W * 0.29)), c = W / 2 - hw;
+  return { hw, c, yb: H * 0.73, r: Math.min(c * 0.35, 2.5) };   // cut: |x| < c above height yb, corners rounded with radius r
 }
 // D-cut bag: a rounded slot near the top of both panels, inside a welded reinforcement patch.
 function dcutHole() {
@@ -383,9 +385,9 @@ function panelZ(x, y, seed) {
   const bulge = (0.12 + 1.3 * full) * ex * Math.pow(ey, 0.8) * flat;
   // soft buckling: long, mostly vertical waves plus small surface wrinkles
   const buckle = ((0.3 - 0.18 * full) * fbm(x * 0.15, y * 0.07, seed) * ex * ey
-               + 0.06 * fbm(x * 0.7, y * 0.5, seed + 20) * ex * ey) * flat;
+               + 0.035 * fbm(x * 0.7, y * 0.5, seed + 20) * ex * ey) * flat;
   // bags ship folded flat: the bottom folds up at the gusset's half-depth and leaves a soft pressed line across the panel
-  const fy = Math.min(state.D / 2, H * 0.45), pressed = T.gusset === 'side' ? -0.07 * Math.exp(-(((y - fy) / 0.3) ** 2)) * ex : 0;
+  const fy = Math.min(state.D / 2, H * 0.45), pressed = T.gusset === 'side' && T.handles !== 'tshirt' ? -0.07 * Math.exp(-(((y - fy) / 0.3) ** 2)) * ex : 0;
   // the folded gusset drags the top corners in, leaving a diagonal crease on each side
   let crease = 0;
   const Lc = Math.min(H * 0.42, 11), dl = Math.hypot(0.5, 1);
@@ -464,7 +466,9 @@ function buildBody() {
       return { p, a: [R[0] + (sx > 0 ? fromFront : D - fromFront), R[1] + H - y] };
     }, [sx, 0, 0]));
   }
-  if (D >= 0.5) parts.push(grid(80, 32, (u, v) => ({ p: [-W / 2 + u * W, 0, g - v * D], a: [L.bottom[0] + u * W, L.bottom[1] + v * D] }), [0, -1, 0]));
+  // the base: a box bottom, or for T-shirt bags just the thin sealed strip where front and back meet
+  const bz = TYPES[state.type].handles === 'tshirt' ? profile(0).d : g;
+  if (D >= 0.5) parts.push(grid(80, TYPES[state.type].handles === 'tshirt' ? 2 : 32, (u, v) => ({ p: [-W / 2 + u * W, 0, bz - v * 2 * bz], a: [L.bottom[0] + u * W, L.bottom[1] + v * D] }), [0, -1, 0]));
   return mergeGeometries(parts);
 }
 
@@ -858,8 +862,8 @@ function drawWelds(ctx, PX) {
   if (D >= 0.5) for (const R of [L.left, L.right]) {
     const [x, y] = R;
     if (T.gusset === 'side' && T.handles === 'tshirt') {
-      // a T-shirt bag is one folded tube: no seams down the sides, only the seal across the handle tops
-      weldLine(ctx, PX, x, y + 0.9, x + D, y + 0.9);
+      // a T-shirt bag is one folded tube: no seams down the sides, only the seals across the handle tops and the bottom
+      weldLine(ctx, PX, x, y + 0.9, x + D, y + 0.9); weldLine(ctx, PX, x, y + H - 1.1, x + D, y + H - 1.1);
     } else if (T.gusset === 'side') {
       // box and bottle bags: the gusset is welded to the front and back along both corners; its centre is only a fold
       const apexY = y + H - Math.min(D / 2, H * 0.45);
@@ -938,14 +942,6 @@ function redrawAtlas() {
   }
   ctx.save(); ctx.strokeStyle = weldColour(state.bag); ctx.lineCap = 'butt'; ctx.globalAlpha = 0.6;
   drawWelds(ctx, PX); ctx.restore();
-  if (through > 0.1) {   // thin light fabric: the print on the far panel shows through faintly, mirrored, as in the videos
-    for (const [to, items] of [[L.front, design.back], [L.back, design.front]]) {
-      ctx.save(); ctx.globalAlpha = through * 0.22;
-      ctx.translate((to[0] + W) * PX, 0); ctx.scale(-1, 1);
-      drawSide(ctx, PX, 0, to[1], items);
-      ctx.restore();
-    }
-  }
   drawPrinted(ctx, PX, L.front[0], L.front[1], design.front);
   drawPrinted(ctx, PX, L.back[0], L.back[1], design.back);
   atlasTex.needsUpdate = true;
@@ -981,6 +977,9 @@ function redrawAtlas() {
   alphaTex.needsUpdate = true;
 
   showThrough.value = through;   // and the print shows faintly from inside
+  // thin non-woven lets light through: the inside and the far panel show softly through it, tinted by the fabric
+  outerMat.transmission = Math.min(0.3, through) + 0.02;
+  innerMat.emissive.set(state.bag).multiplyScalar(through * 0.45);   // a light bag glows a little inside, lit through its walls
   dirty = true;
 }
 
@@ -990,10 +989,14 @@ const web = webbing();
 const outerMat = new THREE.MeshPhysicalMaterial({
   map: atlasTex, normalMap: fabN, normalScale: new THREE.Vector2(0.36, 0.36),
   bumpMap: bumpTex, bumpScale: 2.2, roughnessMap: roughTex, roughness: 1, alphaMap: alphaTex, alphaTest: 0.5,
-  sheen: 0.35, sheenRoughness: 0.5, sheenColor: 0xffffff, side: THREE.FrontSide,
+  sheen: 0.18, sheenRoughness: 0.6, sheenColor: 0xffffff, side: THREE.FrontSide,
+  transmission: 0.1, thickness: 0,   // see redrawAtlas: depends on how light the fabric is
 });
 // three.js uses either a normal map or a bump map; apply the weld relief on top of the fabric normal map.
 outerMat.onBeforeCompile = sh => {
+  // light through thin fabric is diffused, but less than the surface's own matte finish would suggest
+  sh.fragmentShader = sh.fragmentShader.replace('#include <transmission_fragment>',
+    THREE.ShaderChunk.transmission_fragment.replace('n, v, material.roughness, material.diffuseColor', 'n, v, material.roughness * 0.5, material.diffuseColor'));
   sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_maps>',
     '#include <normal_fragment_maps>\n#if defined( USE_BUMPMAP ) && defined( USE_NORMALMAP_TANGENTSPACE )\n\tnormal = perturbNormalArb( - vViewPosition, normal, dHdxy_fwd(), faceDirection );\n#endif');
 };
