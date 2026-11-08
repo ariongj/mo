@@ -978,14 +978,32 @@ function redrawAtlas() {
 
   showThrough.value = through;   // and the print shows faintly from inside
   // thin non-woven lets light through: the inside and the far panel show softly through it, tinted by the fabric
-  outerMat.transmission = Math.min(0.3, through) + 0.02;
-  innerMat.emissive.set(state.bag).multiplyScalar(through * 0.45);   // a light bag glows a little inside, lit through its walls
+  // how see-through the fabric is, matched to the videos: white and light colours a little, dark colours hardly at all
+  outerMat.transmission = through > 0.2 ? 0.45 : through > 0.1 ? 0.26 : 0.06;
+  backLight.value = through > 0.2 ? 0.55 : through > 0.1 ? 0.32 : 0.08;
+  innerMat.emissive.set(state.bag).multiplyScalar(through * 0.38);   // a bright room lights the inside through the walls
   dirty = true;
 }
 
 // ---------------- materials & meshes ----------------
 const fabN = fabricNormal();
 const web = webbing();
+// Thin non-woven lets direct light through: a panel with the light behind it glows softly, tinted by the fabric.
+// Added to three.js' direct lighting for the bag's outside and inside surfaces.
+const backLight = { value: 0.3 };
+function thinFabric(sh) {
+  sh.uniforms.backLight = backLight;
+  sh.fragmentShader = sh.fragmentShader.replace('#include <lights_physical_pars_fragment>', `#include <lights_physical_pars_fragment>
+uniform float backLight;
+void RE_Direct_Thin( const in IncidentLight directLight, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir,
+    const in vec3 geometryClearcoatNormal, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
+  RE_Direct_Physical( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+  float through = saturate( dot( - geometryNormal, directLight.direction ) );
+  reflectedLight.directDiffuse += through * directLight.color * material.diffuseColor * backLight;
+}
+#undef RE_Direct
+#define RE_Direct RE_Direct_Thin`);
+}
 const outerMat = new THREE.MeshPhysicalMaterial({
   map: atlasTex, normalMap: fabN, normalScale: new THREE.Vector2(0.36, 0.36),
   bumpMap: bumpTex, bumpScale: 2.2, roughnessMap: roughTex, roughness: 1, alphaMap: alphaTex, alphaTest: 0.5,
@@ -994,6 +1012,7 @@ const outerMat = new THREE.MeshPhysicalMaterial({
 });
 // three.js uses either a normal map or a bump map; apply the weld relief on top of the fabric normal map.
 outerMat.onBeforeCompile = sh => {
+  thinFabric(sh);
   // light through thin fabric is diffused, but less than the surface's own matte finish would suggest
   sh.fragmentShader = sh.fragmentShader.replace('#include <transmission_fragment>',
     THREE.ShaderChunk.transmission_fragment.replace('n, v, material.roughness, material.diffuseColor', 'n, v, material.roughness * 0.5, material.diffuseColor'));
@@ -1008,6 +1027,7 @@ const innerMat = new THREE.MeshPhysicalMaterial({
 });
 // Inside the bag, show only a faint, mirrored hint of the outside print (stronger on white fabric).
 innerMat.onBeforeCompile = sh => {
+  thinFabric(sh);
   sh.uniforms.showThrough = showThrough;
   sh.fragmentShader = 'uniform float showThrough;\n' + sh.fragmentShader.replace('#include <map_fragment>',
     '#ifdef USE_MAP\n\tdiffuseColor.rgb = mix( diffuseColor.rgb, texture2D( map, vMapUv ).rgb * 0.92, showThrough );\n#endif');
