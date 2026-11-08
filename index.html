@@ -36,12 +36,33 @@
   .vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 75% 70% at 50% 58%, transparent 40%, var(--vig) 100%); }
   #views { position: absolute; top: 14px; left: max(16px, env(safe-area-inset-left, 0px)); display: flex; gap: 6px; flex-wrap: wrap; }
 
-  #panel { width: 352px; overflow-y: auto; background: var(--panel); border-left: 1px solid var(--line);
-           padding-block: 20px 28px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
-  header h1 { font: 700 22px/1.1 var(--f-display); font-stretch: 85%; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
-  header p { margin: 6px 0 0; color: var(--muted); font: 12px/1.5 var(--f-mono); }
-  section { border-top: 1px solid var(--line); padding-block: 14px; display: grid; gap: 10px; }
-  header + section { margin-top: 16px; }
+  /* control centre: three steps as tabs, one pane at a time, a summary bar that is always visible */
+  #panel { width: 340px; display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-left: 1px solid var(--line); }
+  #panel > * { padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: max(18px, env(safe-area-inset-right, 0px)); }
+  .head { padding-block: 16px 10px; }
+  .head h1 { font: 700 20px/1.1 var(--f-display); font-stretch: 85%; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .head p { margin: 4px 0 0; color: var(--muted); font: 11.5px/1.5 var(--f-mono); }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .steps button { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 4px; font-weight: 600; }
+  .steps i { font: 600 10.5px/1 var(--f-mono); font-style: normal; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; border: 1px solid currentColor; }
+  .panes { flex: 1; overflow-y: auto; padding-block: 12px 16px; min-height: 0; }
+  .pane { display: grid; gap: 4px; }
+  .lead { margin: 0 0 8px; color: var(--muted); font-size: 12.5px; }
+  .next { margin-top: 10px; width: 100%; padding-block: 9px; font-weight: 600; }
+  .sum { border-top: 1px solid var(--line); padding-block: 10px; display: flex; gap: 10px; align-items: center; justify-content: space-between; background: var(--panel); }
+  .sum div { display: grid; min-width: 0; line-height: 1.35; }
+  .sum b { font-weight: 600; font-size: 13px; }
+  .sum span { font: 11px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  button.primary { background: var(--sel); color: var(--sel-ink); border-color: var(--sel); font-weight: 600; flex: none; }
+  .light { position: absolute; top: 14px; right: max(16px, env(safe-area-inset-right, 0px)); border: 1px solid var(--line); border-radius: 6px;
+           background: color-mix(in srgb, var(--panel) 90%, transparent); backdrop-filter: blur(6px); }
+  .light summary { cursor: pointer; list-style: none; padding: 7px 11px; font: 500 13px var(--f-body); }
+  .light summary::-webkit-details-marker { display: none; }
+  .light summary::after { content: " ▾"; color: var(--muted); }
+  .light[open] { padding-bottom: 8px; }
+  .light .row { padding-inline: 11px; width: 250px; grid-template-columns: 66px 1fr 40px; }
+  section { border-top: 1px solid var(--line); padding-block: 12px; display: grid; gap: 8px; }
+  .pane > section:first-child { border-top: 0; padding-top: 0; }
   h2 { margin: 0; font: 600 11px var(--f-body); letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
 
   .seg { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -75,11 +96,11 @@
   .samples h3 { grid-column: 1 / -1; margin: 6px 0 0; font: 600 12px var(--f-body); color: var(--ink); display: flex; gap: 6px; align-items: baseline; }
   .samples h3:first-child { margin-top: 0; }
   .samples h3 span { font: 11px var(--f-mono); color: var(--muted); font-weight: 400; }
-  .sample { display: flex; align-items: center; gap: 8px; text-align: left; padding: 7px 8px; min-width: 0; }
-  .sample .dot { width: 20px; height: 20px; border-radius: 50%; flex: none; border: 1px solid var(--line); }
+  .sample { display: flex; align-items: center; gap: 8px; text-align: left; padding: 6px 8px; min-width: 0; }
+  .sample .dot { width: 18px; height: 18px; border-radius: 50%; flex: none; border: 1px solid var(--line); }
   .sample span { display: grid; min-width: 0; line-height: 1.25; }
-  .sample b { font-weight: 600; font-size: 12.5px; text-wrap: balance; }
-  .sample small { font: 11px var(--f-mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sample b { font-weight: 600; font-size: 12px; text-wrap: balance; }
+  .sample small { font: 10.5px var(--f-mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sample.on small { color: inherit; opacity: 0.8; }
 
   .editor { border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--chip); display: grid; place-items: center; }
@@ -94,7 +115,10 @@
   @media (max-width: 760px) {
     #app { flex-direction: column; height: auto; }
     #stage { flex: none; height: 58vh; }
-    #panel { width: auto; border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
+    #panel { width: auto; border-left: 0; border-top: 1px solid var(--line); }
+    .panes { overflow: visible; }
+    .sum { position: sticky; bottom: 0; padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)); z-index: 5; }
+    .steps { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--panel); padding-top: 8px; }
   }
   @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 </style>
@@ -109,23 +133,33 @@
       <button id="v-side" data-view="side">Side</button>
       <button id="v-top" data-view="top">Inside</button>
     </div>
+    <details class="light" id="lightBox">
+      <summary>Light</summary>
+      <div class="row"><label for="envRot">Rotate</label><input type="range" id="envRot" min="0" max="360" value="20"><output id="o-envRot"></output></div>
+      <div class="row"><label for="expo">Brightness</label><input type="range" id="expo" min="0.5" max="1.8" step="0.05" value="1"><output id="o-expo"></output></div>
+    </details>
     <div class="hud"><b id="dimsHud">20 × 26 × 12 cm</b><span>Drag to rotate · scroll to zoom</span></div>
   </div>
 
   <aside id="panel">
-    <header>
+    <header class="head">
       <h1>Non-woven bags</h1>
       <p id="typeSub">Spunbond PP · ultrasonic welded</p>
     </header>
-
-    <section>
-      <h2>Start from a sample</h2>
-      <div class="samples" id="samples"></div>
-      <p class="note">Real KOBAGS products, grouped by bag type. Pick one, then change anything below.</p>
-    </section>
-
-    <section>
-      <h2>Bag type</h2>
+    <nav class="steps" id="tabs" role="tablist" aria-label="Steps">
+      <button role="tab" data-tab="samples" class="on" aria-selected="true"><i>1</i>Samples</button>
+      <button role="tab" data-tab="bag" aria-selected="false"><i>2</i>Bag</button>
+      <button role="tab" data-tab="design" aria-selected="false"><i>3</i>Design</button>
+    </nav>
+    <div class="panes" id="panes">
+      <div class="pane" data-pane="samples" role="tabpanel">
+        <p class="lead">Start from a real KOBAGS bag. You can change everything in the next steps.</p>
+        <div class="samples" id="samples"></div>
+        <button class="next" data-go="bag">Next: choose the bag</button>
+      </div>
+      <div class="pane" data-pane="bag" role="tabpanel" hidden>
+        <section>
+          <h2>Type</h2>
       <div class="seg" id="typeSeg">
         <button data-v="box" class="on">Box bag</button>
         <button data-v="handle">Handle bag</button>
@@ -134,27 +168,33 @@
         <button data-v="string">String bag</button>
         <button data-v="bottle">Bottle bag</button>
       </div>
-      <div class="seg" id="sizeSeg" role="group" aria-label="Standard size"></div>
-      <p class="moq" id="moq"></p>
-    </section>
-
-    <section>
-      <h2>Fabric colour</h2>
-      <div class="swatches" id="bagSw"></div>
-    </section>
-
-    <section id="handlesSec">
-      <h2 id="handlesTitle">Handles</h2>
+        </section>
+        <section>
+          <h2>Size</h2>
+          <div class="seg" id="sizeSeg" role="group" aria-label="Standard size"></div>
+          <p class="moq" id="moq"></p>
+        </section>
+        <section>
+          <h2>Fabric colour</h2>
+          <div class="swatches" id="bagSw"></div>
+        </section>
+        <section id="handlesSec">
+          <h2 id="handlesTitle">Handles</h2>
       <div class="swatches" id="handleSw"></div>
+      <div class="seg" id="strapSeg" role="group" aria-label="Handle material">
+        <button data-v="fabric" class="on">Non-woven</button>
+        <button data-v="webbing">Woven webbing</button>
+      </div>
       <div class="seg" id="poseSeg">
-        <button data-v="relaxed" class="on">Relaxed</button>
-        <button data-v="upright">Upright</button>
+        <button data-v="upright" class="on">Upright</button>
+        <button data-v="relaxed">Relaxed</button>
       </div>
       <div class="row" id="dropRow"><label for="drop">Handle drop</label><input type="range" id="drop" min="6" max="35" step="0.5" value="12"><output id="o-drop"></output></div>
-    </section>
-
-    <section id="designSec">
-      <h2>Your design</h2>
+        </section>
+        <button class="next" data-go="design">Next: add your design</button>
+      </div>
+      <div class="pane" data-pane="design" role="tabpanel" hidden>
+        <section id="designSec">
       <div class="seg" id="sideSeg" role="group" aria-label="Bag side">
         <button data-v="front" class="on">Front</button>
         <button data-v="back">Back</button>
@@ -181,15 +221,13 @@
         <p class="note" id="pNote"></p>
       </div>
       <p class="note" id="designNote">Drag to move. Drag the corner square to resize. Arrow keys nudge the selected item. Hatched areas cannot be printed.</p>
-    </section>
-
-
-    <section>
-      <h2>Light</h2>
-      <div class="row"><label for="envRot">Rotate</label><input type="range" id="envRot" min="0" max="360" value="20"><output id="o-envRot"></output></div>
-      <div class="row"><label for="expo">Exposure</label><input type="range" id="expo" min="0.5" max="1.8" step="0.05" value="1"><output id="o-expo"></output></div>
-      <div class="seg"><button id="shot">Save image</button></div>
-    </section>
+        </section>
+      </div>
+    </div>
+    <footer class="sum">
+      <div><b id="sumType">Box bag · XS</b><span id="sumDims"></span><span id="sumMoq"></span></div>
+      <button id="shot" class="primary">Save image</button>
+    </footer>
   </aside>
 </div>
 
@@ -230,7 +268,7 @@ const STYLES = {
 
 // Standard sizes from the GoBack size sheet: [label, width, height, gusset (cm), minimum order].
 const TYPES = {
-  box:    { name: 'Box bag', fill: 0.28,  sub: 'Side gusset · welded webbing handles', gusset: 'side', handles: 'loop', strap: 'webbing', hem: 3.2, py: 0.51, ps: 0.85, handle: '#1b1c20',
+  box:    { name: 'Box bag', fill: 0.28,  sub: 'Side gusset · welded handles', gusset: 'side', handles: 'loop', strap: 'webbing', hem: 3.2, py: 0.51, ps: 0.85, handle: '#1b1c20',
             sizes: [['XS', 20, 26, 12, '3,800'], ['S', 25, 26, 12, '3,300'], ['M', 32, 29.5, 15, '5,300'], ['L', 40, 38.5, 17, '4,400'], ['XL', 47, 42, 20, '3,800']] },
   handle: { name: 'Handle bag', fill: 0.12,  sub: 'Bottom gusset · fabric loop handles', gusset: 'bottom', handles: 'loop', strap: 'fabric', close: 0.35, hem: 3, py: 0.53, ps: 0.8, handle: 'match',
             sizes: [['XS', 20, 25, 5, '5,000'], ['S', 25, 29.5, 5, '4,000'], ['M', 35, 33, 8, '2,800'], ['L', 45, 42, 10, '4,000'], ['XL', 55, 44.5, 15, '≈3,500']] },
@@ -246,7 +284,7 @@ const TYPES = {
 
 const state = {
   type: 'box', size: 'XS',
-  W: 20, H: 26, D: 12, hem: 3.2, drop: 12, full: 0.35, pose: 'relaxed',
+  W: 20, H: 26, D: 12, hem: 3.2, drop: 12, full: 0.35, pose: 'upright', strap: 'fabric',
   bag: '#d42a1f', handle: '#1b1c20',
 };
 
@@ -478,9 +516,11 @@ function buildBody() {
 
 // ---------------- handle (webbing strap) geometry ----------------
 // The strap is welded flat inside the hem, rises, and twists a quarter turn so it lies flat across the top of the loop.
+// Half the distance between the two ends of one handle: about 12 cm apart on the larger bags, as on the real ones.
+function handleSpan() { return Math.min(0.28 * state.W, state.W / 2 - 2, 6.2); }
 function buildStrap(side) {
-  const { W, H, hem, drop } = state, a = Math.min(0.28 * W, W / 2 - 2), fabric = TYPES[state.type].strap === 'fabric';
-  const sw = fabric ? 3 : 2.5, ht = fabric ? 0.04 : 0.055;
+  const { W, H, hem, drop } = state, a = handleSpan(), fabric = state.strap !== 'webbing';
+  const sw = 2.5, ht = fabric ? 0.075 : 0.06;   // a folded non-woven strip is a little thicker than woven webbing
   // Relaxed: the strap bends where it leaves the hem and the loop falls outward, the back one a bit further.
   const tilt = state.pose === 'relaxed' ? (side > 0 ? 0.62 : 0.85) : 0.1;
   const zIn = y => side * (profile(Math.min(y, H)).d - 0.2);
@@ -490,12 +530,20 @@ function buildStrap(side) {
     return new THREE.Vector3(x, H + h * Math.cos(f), zIn(H) + side * h * Math.sin(f));
   };
   const yIn = H - hem + 0.45;
+  // upright (as when the bag is picked up): legs rise nearly parallel into a rounded top; relaxed: the loop spreads a little as it falls
+  const out = state.pose === 'relaxed' ? 0.6 : 0, sh = state.pose === 'relaxed' ? 0.74 : 0.88;
   const curve = new THREE.CatmullRomCurve3([
-    P(-a, yIn), P(-a, H - 0.3), P(-a - 0.6, H + 0.3 * drop), P(-a * 0.74, H + 0.84 * drop), P(0, H + drop),
-    P(a * 0.74, H + 0.84 * drop), P(a + 0.6, H + 0.3 * drop), P(a, H - 0.3), P(a, yIn),
+    P(-a, yIn), P(-a, H - 0.3), P(-a - out, H + 0.3 * drop), P(-a * sh, H + 0.84 * drop), P(0, H + drop),
+    P(a * sh, H + 0.84 * drop), P(a + out, H + 0.3 * drop), P(a, H - 0.3), P(a, yIn),
   ], false, 'centripetal');
-  const N = 200, pts = curve.getSpacedPoints(N);
+  const N = 200, pts = curve.getSpacedPoints(N), K = 14;
   const N0 = new THREE.Vector3(0, -Math.sin(tilt), side * Math.cos(tilt));
+  // cross-section: a flat strip with rounded edges; the ring starts mid-face so its seam sits on a flat part
+  const ring = [];
+  for (let k = 0; k <= K; k++) {
+    const t = Math.PI / 2 + k / K * Math.PI * 2, c = Math.cos(t), sn = Math.sin(t);
+    ring.push([Math.sign(c) * Math.abs(c) ** 0.35, Math.sign(sn) * Math.abs(sn) ** 0.7]);
+  }
   const pos = [], nor = [], uv = [], uv1 = [], idx = [];
   const T = new THREE.Vector3(), Pp = new THREE.Vector3(), Np = new THREE.Vector3(), Wv = new THREE.Vector3(), Nn = new THREE.Vector3();
   let len = 0;
@@ -506,19 +554,15 @@ function buildStrap(side) {
     Pp.crossVectors(N0, T).normalize();
     Np.copy(N0).addScaledVector(T, -N0.dot(T)).normalize();
     const out = p.y > H ? Math.hypot(p.y - H, p.z - zIn(H)) : 0;   // distance travelled since leaving the hem
-    const th = Math.PI / 2 * smooth(0.12, 0.85, out / drop);
+    const th = 0.2 * Math.sin(out * 0.32 + side * 1.7) * smooth(0.08, 0.45, out / drop);   // a soft strap turns a little; it does not twist over
     Wv.copy(Pp).multiplyScalar(Math.cos(th)).addScaledVector(Np, Math.sin(th));
     Nn.crossVectors(T, Wv).normalize();
-    // four faces (two flat sides, two edges), each with its own normals so the edges read as edges
-    const faces = [[1, 1, -1, 1, Nn, 1], [-1, -1, 1, -1, Nn, -1], [-1, 1, -1, -1, Wv, -1], [1, -1, 1, 1, Wv, 1]];
-    faces.forEach(([w0, t0, w1, t1, n, ns], f) => {
-      for (const [w, t] of [[w0, t0], [w1, t1]]) {
-        pos.push((p.x + Wv.x * w * sw / 2 + Nn.x * t * ht) * CM, (p.y + Wv.y * w * sw / 2 + Nn.y * t * ht) * CM, (p.z + Wv.z * w * sw / 2 + Nn.z * t * ht) * CM);
-        uv.push(len, f < 2 ? (w < 0 ? 0 : 1) : 0.03);
-        uv1.push(len / FAB_TILE, (f < 2 ? (w < 0 ? 0 : sw) : 0.05) / FAB_TILE);
-      }
-    });
-    if (i < N) for (let f = 0; f < 4; f++) { const b = i * 8 + f * 2, c = b + 8; idx.push(b, c, b + 1, b + 1, c, c + 1); }
+    for (const [rx, ry] of ring) {
+      pos.push((p.x + Wv.x * rx * sw / 2 + Nn.x * ry * ht) * CM, (p.y + Wv.y * rx * sw / 2 + Nn.y * ry * ht) * CM, (p.z + Wv.z * rx * sw / 2 + Nn.z * ry * ht) * CM);
+      uv.push(len, (rx + 1) / 2);
+      uv1.push(len / FAB_TILE, (rx * sw / 2 + (ry < 0 ? sw : 0)) / FAB_TILE);
+    }
+    if (i < N) for (let k = 0; k < K; k++) { const b = i * (K + 1) + k, c = b + K + 1; idx.push(b, c, b + 1, b + 1, c, c + 1); }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -847,7 +891,7 @@ function weldRect(ctx, PX, x, y, w, h) {
 }
 function drawWelds(ctx, PX) {
   const { W, H, D, hem } = state, T = TYPES[state.type];
-  const a = Math.min(0.28 * W, W / 2 - 2), sq = Math.min(2.2, hem * 0.72);
+  const a = handleSpan(), sq = Math.min(2.2, hem * 0.72);
   for (const R of [L.front, L.back]) {
     const [x, y] = R;
     if (hem > 0) weldLine(ctx, PX, x, y + hem, x + W, y + hem);
@@ -935,7 +979,7 @@ function redrawAtlas() {
   const through = lum > 0.75 ? 0.3 : lum > 0.45 ? 0.14 : 0.05;
   if (TYPES[state.type].handles === 'loop' && state.handle !== 'match' && through > 0.1) {
     // the strap ends welded inside the hem show through as soft squares under the weld marks
-    const a = Math.min(0.28 * W, W / 2 - 2), sw = TYPES[state.type].strap === 'fabric' ? 3 : 2.5;
+    const a = handleSpan(), sw = 2.5;
     ctx.save(); ctx.fillStyle = state.handle; ctx.globalAlpha = through * 1.25;
     for (const R of [L.front, L.back]) for (const sx of [-1, 1]) ctx.fillRect((R[0] + W / 2 + sx * a - sw / 2) * PX, R[1] * PX, sw * PX, (hem - 0.45) * PX);
     ctx.restore();
@@ -1033,12 +1077,12 @@ innerMat.onBeforeCompile = sh => {
     '#ifdef USE_MAP\n\tdiffuseColor.rgb = mix( diffuseColor.rgb, texture2D( map, vMapUv ).rgb * 0.92, showThrough );\n#endif');
 };
 innerMat.customProgramCacheKey = () => 'bag-inner-through';
-const strapMat = new THREE.MeshPhysicalMaterial({
+const strapMat = new THREE.MeshPhysicalMaterial({   // woven PP webbing
   map: web.map, normalMap: web.nm, normalScale: new THREE.Vector2(0.9, 0.9),
-  roughness: 0.5, sheen: 0.7, sheenRoughness: 0.35, sheenColor: 0x9a9a9a, side: THREE.DoubleSide,
+  roughness: 0.6, sheen: 0.45, sheenRoughness: 0.45, sheenColor: 0x8a8a8a, side: THREE.DoubleSide,
 });
-const strapFabMat = new THREE.MeshPhysicalMaterial({   // handle bag: straps cut from the same non-woven fabric
-  normalMap: fabN, normalScale: new THREE.Vector2(0.5, 0.5), roughness: 0.85, sheen: 0.35, sheenRoughness: 0.5, side: THREE.DoubleSide,
+const strapFabMat = new THREE.MeshPhysicalMaterial({   // the usual KOBAGS handle: a strip of the same matte non-woven, folded in two
+  normalMap: fabN, normalScale: new THREE.Vector2(0.45, 0.45), roughness: 0.9, sheen: 0.25, sheenRoughness: 0.6, side: THREE.DoubleSide,
 });
 const cordMat = new THREE.MeshPhysicalMaterial({
   map: web.map, normalMap: web.nm, normalScale: new THREE.Vector2(1.2, 1.2), roughness: 0.7, sheen: 0.5, sheenRoughness: 0.4,
@@ -1063,8 +1107,7 @@ function applyColours() {
   outerMat.sheenColor.set(state.bag).lerp(new THREE.Color(0xffffff), 0.2);
   const hc = state.handle === 'match' ? state.bag : state.handle;
   strapMat.color.set(hc); strapFabMat.color.set(hc); cordMat.color.set(hc);
-  const fabricStrap = TYPES[state.type].strap === 'fabric' || state.handle === 'match';   // straps in the fabric colour are cut from the same non-woven
-  straps.forEach(s => { s.material = fabricStrap ? strapFabMat : strapMat; });
+  straps.forEach(s => { s.material = state.strap === 'webbing' ? strapMat : strapFabMat; });
   document.documentElement.style.setProperty('--bagc', state.bag);
   dirty = true;
 }
@@ -1149,6 +1192,21 @@ function slider(id, keyName, show, after) {
 const syncAll = () => Object.values(sliderSync).forEach(f => f());
 const cm = v => fmt(v) + ' cm', pct = v => Math.round(v * 100) + '%';
 slider('drop', 'drop', cm, rebuild);
+// steps
+function showTab(t) {
+  document.querySelectorAll('#tabs button').forEach(b => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  document.querySelectorAll('.pane').forEach(p => { p.hidden = p.dataset.pane !== t; });
+  document.getElementById('panes').scrollTop = 0;
+  if (t === 'design') drawEditor();
+}
+document.getElementById('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
+document.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => showTab(b.dataset.go); });
+// handle material
+function syncStrap() { document.querySelectorAll('#strapSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === state.strap)); }
+document.getElementById('strapSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.strap = b.dataset.v; syncStrap(); applyColours(); rebuild(); clearSample();
+});
 document.getElementById('poseSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   state.pose = b.dataset.v;
@@ -1161,7 +1219,11 @@ function syncSize() {
   const T = TYPES[state.type];
   sizeSeg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === state.size));
   const hit = T.sizes.find(z => z[0] === state.size);
-  moq.innerHTML = `${fmt(hit[1])} × ${fmt(hit[2])} × ${fmt(hit[3])} cm · minimum order <b>${/\d/.test(hit[4]) ? hit[4] + ' pcs' : hit[4]}</b>`;
+  const order = /\d/.test(hit[4]) ? hit[4] + ' pcs' : hit[4];
+  moq.innerHTML = `${fmt(hit[1])} × ${fmt(hit[2])} × ${fmt(hit[3])} cm · minimum order <b>${order}</b>`;
+  document.getElementById('sumType').textContent = `${T.name} · ${hit[0]}`;
+  document.getElementById('sumDims').textContent = `${fmt(hit[1])} × ${fmt(hit[2])} × ${fmt(hit[3])} cm`;
+  document.getElementById('sumMoq').textContent = `Minimum order ${order}`;
 }
 function applySize(label) {
   const z = TYPES[state.type].sizes.find(q => q[0] === label); if (!z) return;
@@ -1283,7 +1345,7 @@ const SAMPLES = [
   { name: 'Thank you · grey', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#7a7a7c', front: heart('#7a7a7c'), back: heart('#7a7a7c') },
   { name: 'Thank you · teal', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#2fa58a', front: heart('#2fa58a'), back: heart('#2fa58a') },
   { name: 'Drawstring', sub: 'String bag M · white', type: 'string', size: 'M', bag: '#efeee9', handle: '#eceae4', ink: '#c49a3c', front: enhance('#c49a3c', '#c49a3c'), back: [] },
-  { name: 'KIVO', sub: 'Box bag XS · red', type: 'box', size: 'XS', bag: '#d42a1f', handle: '#1b1c20', ink: '#1a1a1a', front: [{ kind: 'graphic', graphic: 'kivo', fx: 0.5, fy: 0.53, fw: 0.85, ink: '#1a1a1a' }], back: [] },
+  { name: 'KIVO', sub: 'Box bag XS · red', type: 'box', size: 'XS', bag: '#d42a1f', handle: '#1b1c20', strap: 'webbing', ink: '#1a1a1a', front: [{ kind: 'graphic', graphic: 'kivo', fx: 0.5, fy: 0.53, fw: 0.85, ink: '#1a1a1a' }], back: [] },
 ];
 // Samples are listed under their bag type, in the same order as the bag type buttons.
 const samplesEl = document.getElementById('samples');
@@ -1312,6 +1374,7 @@ function loadSample(i) {
   design.front = []; design.back = [];          // cleared first, so the type change has nothing to rescale
   applyType(s.type);                            // also applies the size and the type's default handle colour
   if (s.handle) state.handle = s.handle;
+  state.strap = s.strap || 'fabric'; syncStrap();
   for (const k of ['front', 'back']) design[k] = s[k].map(({ fx, fy, fw, ...e }) => {
     const el = { kind: 'text', ...e, id: nextId++, x: fx * state.W, y: fy * state.H, w: fw * state.W };
     clampEl(el); return el;
