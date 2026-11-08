@@ -253,11 +253,11 @@ const FAB_TILE = 1.04;                  // cm covered by one tile of the fabric 
 
 const BAG_COLOURS = [
   ['Red', '#d42a1f'], ['Orange', '#e8641c'], ['Yellow', '#efbf2a'], ['Green', '#2e7d3c'], ['Royal', '#2350b8'],
-  ['Navy', '#1f2b4d'], ['Black', '#1d1d20'], ['Grey', '#8c8e92'], ['White', '#efeee9'], ['Kraft', '#bd9665'],
+  ['Navy', '#1f2b4d'], ['Black', '#1d1d20'], ['Grey', '#8c8e92'], ['White', '#efeee9'], ['Kraft', '#bd9665'], ['Olive', '#a2ad48'],
 ];
-const HANDLE_COLOURS = [['Black', '#1b1c20'], ['Match fabric', 'match'], ['White', '#eceae4'], ['Navy', '#1f2b4d'], ['Blue', '#2b4db5']];
+const HANDLE_COLOURS = [['Black', '#1b1c20'], ['Match fabric', 'match'], ['White', '#eceae4'], ['Navy', '#1f2b4d'], ['Blue', '#2b4db5'], ['Red', '#ec5534']];
 const INK_COLOURS = [['Black', '#1a1a1a'], ['Dark grey', '#4a4a4c'], ['Grey', '#7a7a7c'], ['White', '#f4f3ef'], ['Gold', '#c49a3c'], ['Silver', '#a9adb2'],
-  ['KOBAGS green', '#7d9c44'], ['Green', '#4c8a3f'], ['Orange', '#e2683a'], ['Red', '#d33a2c'], ['Maroon', '#7a1f18'], ['Teal', '#2fa58a'], ['Navy', '#1f2b4d']];
+  ['KOBAGS green', '#7d9c44'], ['Green', '#4c8a3f'], ['Dark green', '#2f3b1c'], ['Orange', '#e2683a'], ['Red', '#d33a2c'], ['Maroon', '#7a1f18'], ['Teal', '#2fa58a'], ['Navy', '#1f2b4d']];
 // Text styles: [family, weight, label]
 const STYLES = {
   'sans-900': ['Montserrat', 900, 'Montserrat Black'], 'sans-800': ['Montserrat', 800, 'Montserrat Extra Bold'],
@@ -1313,11 +1313,16 @@ const putBrand = (dark, accent) => [
   { text: '———  CONTACT US  ———', style: 'sans-700', fx: 0.5, fy: 0.67, fw: 0.42, ink: dark },
   { text: 'www.kobags-group.com   |   Kobags   |   kobags_group', style: 'sans-500', fx: 0.5, fy: 0.735, fw: 0.74, ink: dark },
 ];
+// the same artwork set lower and a little smaller, as printed on the KOBAGS T-shirt bags
+// (line spacing scaled by the panel's width-to-height ratio, so the lettering keeps its proportions)
+const lowered = items => items.map(e => ({ ...e, fy: 0.69 + (e.fy - 0.53) * 0.74, fw: e.fw * 1.05 }));
 const heart = ink => [{ kind: 'graphic', graphic: 'heart', fx: 0.5, fy: 0.665, fw: 0.66, ink }];
 const DINA = '#d33a2c';
 const SAMPLES = [
   { name: 'Enhance your brand', sub: 'Box bag L · white', type: 'box', size: 'L', bag: '#efeee9', handle: '#2b4db5', ink: '#7d9c44', front: enhance('#7d9c44', '#4a4a4c'), back: enhance('#7d9c44', '#4a4a4c') },
   { name: 'Black & gold', sub: 'Box bag L · black', type: 'box', size: 'L', bag: '#1d1d20', handle: '#1b1c20', ink: '#c49a3c', front: enhance('#c49a3c', '#c49a3c'), back: enhance('#c49a3c', '#c49a3c') },
+  { name: 'Olive & red', sub: 'Box bag M · olive', type: 'box', size: 'M', bag: '#a2ad48', handle: '#ec5534', strap: 'webbing', ink: '#2f3b1c',
+    front: enhance('#2f3b1c', '#2f3b1c'), back: enhance('#2f3b1c', '#2f3b1c') },
   { name: 'Black · white ink', sub: 'Box bag M · black', type: 'box', size: 'M', bag: '#1d1d20', handle: '#1b1c20', ink: '#f4f3ef', front: enhance('#f4f3ef', '#f4f3ef'), back: enhance('#f4f3ef', '#f4f3ef') },
   { name: 'Grey · white ink', sub: 'Box bag L · grey', type: 'box', size: 'L', bag: '#8c8e92', handle: '#1b1c20', ink: '#f4f3ef', front: enhance('#f4f3ef', '#f4f3ef'), back: enhance('#f4f3ef', '#f4f3ef') },
   { name: 'Two-sided kraft', sub: 'Box bag M · kraft', type: 'box', size: 'M', bag: '#bd9665', handle: 'match', ink: '#e2683a', front: putBrand('#3a3a3c', '#e2683a'), back: enhance('#1a1a1a', '#1a1a1a') },
@@ -1341,6 +1346,8 @@ const SAMPLES = [
   { name: 'Black D-cut', sub: 'D-cut L · gold ink', type: 'dcut', size: 'L', bag: '#1d1d20', ink: '#c49a3c', front: enhance('#c49a3c', '#c49a3c'), back: enhance('#c49a3c', '#c49a3c') },
   { name: 'ECO bottle bag', sub: 'Bottle bag · kraft', type: 'bottle', size: 'Std', bag: '#bd9665', ink: '#4c8a3f',
     front: [{ kind: 'graphic', graphic: 'eco', fx: 0.5, fy: 0.6, fw: 0.78, ink: '#4c8a3f' }], back: [{ kind: 'graphic', graphic: 'eco', fx: 0.5, fy: 0.6, fw: 0.78, ink: '#4c8a3f' }] },
+  { name: 'Enhance · navy', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#1f2b4d',
+    front: lowered(enhance('#1f2b4d', '#1f2b4d')), back: lowered(enhance('#1f2b4d', '#1f2b4d')) },
   { name: 'Thank you · orange', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#e2683a', front: heart('#e2683a'), back: heart('#e2683a') },
   { name: 'Thank you · grey', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#7a7a7c', front: heart('#7a7a7c'), back: heart('#7a7a7c') },
   { name: 'Thank you · teal', sub: 'T-shirt S · white', type: 'tshirt', size: 'S', bag: '#efeee9', ink: '#2fa58a', front: heart('#2fa58a'), back: heart('#2fa58a') },
