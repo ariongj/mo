@@ -937,11 +937,18 @@ function cutPath(ctx, PX, x, y) {
   ctx.beginPath();
   if (T.handles === 'dcut') { const o = dcutHole(); ctx.roundRect((x + W / 2 - o.w / 2) * PX, (y + o.top) * PX, o.w * PX, o.h * PX, o.h / 2 * PX); }
   if (T.handles === 'tshirt') {
+    // the cut-out leaves a small rounded tab standing up in the middle, as on the real KOBAGS T-shirt bags
     const t = tshirtCut(), cx = x + W / 2, by = y + H - t.yb;
-    ctx.moveTo((cx - t.c) * PX, (y - 1) * PX);
-    ctx.arcTo((cx - t.c) * PX, by * PX, cx * PX, by * PX, t.r * PX);
-    ctx.arcTo((cx + t.c) * PX, by * PX, (cx + t.c) * PX, (y - 1) * PX, t.r * PX);
-    ctx.lineTo((cx + t.c) * PX, (y - 1) * PX);
+    const tw = t.c * 0.9, th = Math.min(2.4, H * 0.06), tr = Math.min(tw / 2, th) * 0.92, f = 0.35;
+    const P = (px, py) => [px * PX, py * PX];
+    ctx.moveTo(...P(cx - t.c, y - 1));
+    ctx.arcTo(...P(cx - t.c, by), ...P(cx - tw / 2, by), t.r * PX);
+    ctx.arcTo(...P(cx - tw / 2, by), ...P(cx - tw / 2, by - th), f * PX);
+    ctx.arcTo(...P(cx - tw / 2, by - th), ...P(cx, by - th), tr * PX);
+    ctx.arcTo(...P(cx + tw / 2, by - th), ...P(cx + tw / 2, by), tr * PX);
+    ctx.arcTo(...P(cx + tw / 2, by), ...P(cx + t.c, by), f * PX);
+    ctx.arcTo(...P(cx + t.c, by), ...P(cx + t.c, y - 1), t.r * PX);
+    ctx.lineTo(...P(cx + t.c, y - 1));
     ctx.closePath();
   }
 }
