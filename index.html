@@ -72,6 +72,9 @@
   button.ghost { background: transparent; }
 
   .samples { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .samples h3 { grid-column: 1 / -1; margin: 6px 0 0; font: 600 12px var(--f-body); color: var(--ink); display: flex; gap: 6px; align-items: baseline; }
+  .samples h3:first-child { margin-top: 0; }
+  .samples h3 span { font: 11px var(--f-mono); color: var(--muted); font-weight: 400; }
   .sample { display: flex; align-items: center; gap: 8px; text-align: left; padding: 7px 8px; min-width: 0; }
   .sample .dot { width: 20px; height: 20px; border-radius: 50%; flex: none; border: 1px solid var(--line); }
   .sample span { display: grid; min-width: 0; line-height: 1.25; }
@@ -118,7 +121,7 @@
     <section>
       <h2>Start from a sample</h2>
       <div class="samples" id="samples"></div>
-      <p class="note">Real KOBAGS products. Pick one, then change anything below.</p>
+      <p class="note">Real KOBAGS products, grouped by bag type. Pick one, then change anything below.</p>
     </section>
 
     <section>
@@ -373,8 +376,9 @@ function tshirtCut() {
 }
 // D-cut bag: a rounded slot near the top of both panels, inside a welded reinforcement patch.
 function dcutHole() {
-  const { W } = state, w = Math.min(9, W * 0.62), h = 3;
-  return { w, h, top: 2.6, pad: 1.4 };
+  const { W } = state;
+  if (state.type === 'bottle') return { w: W * 0.5, h: 2.4, top: 2.2, pad: 1 };   // the bottle bag's slot is small and close to the top
+  return { w: Math.min(9, W * 0.62), h: 3, top: 2.6, pad: 1.4 };
 }
 function panelZ(x, y, seed) {
   const { W, H, hem, full } = state, T = TYPES[state.type];
@@ -849,10 +853,6 @@ function drawWelds(ctx, PX) {
     if (hem > 0) weldLine(ctx, PX, x, y + hem, x + W, y + hem);
     if (T.handles === 'loop') for (const sx of [-1, 1]) weldSquare(ctx, PX, x + W / 2 + sx * a, y + hem * 0.52, sq);
     if (T.gusset === 'bottom') { weldLine(ctx, PX, x + 0.5, y, x + 0.5, y + H); weldLine(ctx, PX, x + W - 0.5, y, x + W - 0.5, y + H); }
-    if (T.handles === 'dcut') {
-      const o = dcutHole();
-      weldRect(ctx, PX, x + W / 2 - o.w / 2 - o.pad, y + o.top - o.pad, o.w + 2 * o.pad, o.h + 2 * o.pad);
-    }
     if (T.handles === 'tshirt') {
       const t = tshirtCut();
       weldLine(ctx, PX, x, y + H - 1.1, x + W, y + H - 1.1);                        // bottom seal
@@ -927,7 +927,7 @@ function redrawAtlas() {
   if (state.bag === KRAFT) { tile(kraftFlecks, PX / 40, 'multiply', 0.3); tile(mottle, PX / 90, 'soft-light', 0.22); }
   if (TYPES[state.type].handles === 'dcut') {   // the reinforcement patch is a second layer, a touch denser in colour
     const o = dcutHole();
-    ctx.save(); ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    ctx.save(); ctx.fillStyle = 'rgba(0,0,0,0.025)';   // barely visible: the patch is welded inside, with no seam showing outside
     for (const R of [L.front, L.back]) ctx.fillRect((R[0] + W / 2 - o.w / 2 - o.pad) * PX, (R[1] + o.top - o.pad) * PX, (o.w + 2 * o.pad) * PX, (o.h + 2 * o.pad) * PX);
     ctx.restore();
   }
@@ -1265,15 +1265,26 @@ const SAMPLES = [
   { name: 'Drawstring', sub: 'String bag M · white', type: 'string', size: 'M', bag: '#efeee9', handle: '#eceae4', ink: '#c49a3c', front: enhance('#c49a3c', '#c49a3c'), back: [] },
   { name: 'KIVO', sub: 'Box bag XS · red', type: 'box', size: 'XS', bag: '#d42a1f', handle: '#1b1c20', ink: '#1a1a1a', front: [{ kind: 'graphic', graphic: 'kivo', fx: 0.5, fy: 0.53, fw: 0.85, ink: '#1a1a1a' }], back: [] },
 ];
+// Samples are listed under their bag type, in the same order as the bag type buttons.
 const samplesEl = document.getElementById('samples');
-SAMPLES.forEach((s, i) => {
-  const b = document.createElement('button'); b.className = 'sample';
-  b.innerHTML = '<i class="dot"></i><span><b></b><small></small></span>';
-  b.querySelector('.dot').style.background = `linear-gradient(135deg, ${s.bag} 58%, ${s.ink} 58%)`;
-  b.querySelector('b').textContent = s.name; b.querySelector('small').textContent = s.sub;
-  b.onclick = () => loadSample(i);
-  samplesEl.appendChild(b);
-});
+const colourName = hex => (BAG_COLOURS.find(([, v]) => v === hex) || ['Custom'])[0];
+for (const type of [...document.querySelectorAll('#typeSeg button')].map(b => b.dataset.v)) {
+  const group = SAMPLES.map((s, i) => [s, i]).filter(([s]) => s.type === type);
+  if (!group.length) continue;
+  const h = document.createElement('h3');
+  h.textContent = TYPES[type].name + 's';
+  const n = document.createElement('span'); n.textContent = group.length; h.appendChild(n);
+  samplesEl.appendChild(h);
+  for (const [s, i] of group) {
+    const b = document.createElement('button'); b.className = 'sample'; b.dataset.i = i;
+    b.innerHTML = '<i class="dot"></i><span><b></b><small></small></span>';
+    b.querySelector('.dot').style.background = `linear-gradient(135deg, ${s.bag} 58%, ${s.ink} 58%)`;
+    b.querySelector('b').textContent = s.name;
+    b.querySelector('small').textContent = `${s.size} · ${colourName(s.bag)}`;
+    b.onclick = () => loadSample(i);
+    samplesEl.appendChild(b);
+  }
+}
 function clearSample() { samplesEl.querySelectorAll('.sample').forEach(b => b.classList.remove('on')); }
 function loadSample(i) {
   const s = SAMPLES[i];
@@ -1287,7 +1298,7 @@ function loadSample(i) {
   });
   syncBag(); syncHandle(); applyColours();
   side = 'front'; selId = null; syncSideUI();
-  samplesEl.querySelectorAll('.sample').forEach((b, j) => b.classList.toggle('on', j === i));
+  samplesEl.querySelectorAll('.sample').forEach(b => b.classList.toggle('on', +b.dataset.i === i));
   redrawAtlas(); drawEditor(); syncProps(); setView('34');
 }
 
