@@ -1782,11 +1782,26 @@ Promise.all([fontsReady(), loadImage(PRINT_MASK)]).then(([, kivo]) => {
   graphics.heart = heartGraphic();
   Object.assign(graphics, { papirun: papirunIcon(), crescent: crescentIcon(), eco: ecoArt(), your: yourArt() });
   maskCache.clear();
-  loadSample(0);
+  if (!openFromHash()) loadSample(0);
   setView('34', false);
   window.__ready = true;
+  addEventListener('hashchange', openFromHash);
 });
-window.__api = { renderer, render: () => render(true), gtao, applyType, applySize, loadSample, SAMPLES, design, select, drawEditor, printArea, elementSize, getSide: () => side, outer, rim, straps, cords, TYPES, state, setView, rebuild, redrawAtlas, camera, controls, composer, gtao, scene };
+// Links can open a sample or a bag type directly, e.g. index.html#black-gold or index.html#tshirt (used by the landing page).
+const slug = t => t.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+function openFromHash() {
+  const h = decodeURIComponent(location.hash.slice(1)).toLowerCase();
+  if (!h) return false;
+  const i = SAMPLES.findIndex(s => slug(s.name) === h);
+  if (i >= 0) { loadSample(i); showTab('bag'); return true; }
+  if (TYPES[h]) {
+    loadSample(Math.max(0, SAMPLES.findIndex(s => s.type === h)));
+    if (state.type !== h) { applyType(h); clearSample(); }
+    showTab('bag'); return true;
+  }
+  return false;
+}
+window.__api = { renderer, render: () => render(true), gtao, slug, applyType, applySize, loadSample, SAMPLES, design, select, drawEditor, printArea, elementSize, getSide: () => side, outer, rim, straps, cords, TYPES, state, setView, rebuild, redrawAtlas, camera, controls, composer, gtao, scene };
 </script>
 </body>
 </html>
