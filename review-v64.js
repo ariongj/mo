@@ -4,7 +4,7 @@
   const frame = document.getElementById('review');
   const loading = document.getElementById('loading');
   const fallback = document.getElementById('fallback');
-  const publicPath = /^\/(?:sq(?:\/|$))?(?:design|quote|products(?:\/[a-z0-9-]+)?|manufacturing|sustainability|partners|contact|privacy|cookies|terms|bags-kosovo|blog(?:\/[a-z0-9-]+)?)?\/?$/;
+  const publicPath = /^\/(?:sq(?:\/|$))?(?:design|quote|products(?:\/[a-z0-9-]+)?|industries(?:\/retail)?|manufacturing|sustainability|partners|contact|privacy|cookies|terms|certifications|resources|samples|bags-kosovo|blog(?:\/[a-z0-9-]+)?)?\/?$/;
   let currentPath = '/';
   let timer;
   function navigate() {
@@ -25,7 +25,7 @@
     if (typeof event.data.path !== 'string' || !publicPath.test(event.data.path)) return;
     currentPath = event.data.path;
     history.replaceState(null, '', location.pathname + location.search + (currentPath === '/' ? '' : '#' + currentPath));
-    document.title = typeof event.data.title === 'string' ? event.data.title : 'KOBAGS — Version 64 review';
+    document.title = typeof event.data.title === 'string' ? event.data.title : 'KOBAGS — Website review';
     clearTimeout(timer);
     loading.hidden = true;
     fallback.hidden = true;
