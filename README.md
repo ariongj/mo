@@ -1,11 +1,11 @@
 # KOBAGS website review
 
-This GitHub Pages entry displays the separately hosted Kobags review application in a full-window frame. The November 11 review uses the original v64 application with a new manufacturer-led homepage, product navigation, industry choices and quote starter, inspired by Bagfactory’s presentation structure. All photography and business content belong to Kobags.
+This GitHub Pages entry displays the separately hosted Kobags review application in a full-window frame. The November 11 review uses the original v64 application with a new manufacturer-led homepage, product navigation, industry choices and quote starter. The follow-up extends the style across the catalogue and inner pages, adds twelve photographed production examples, and removes the public 3D designer, inspired by Bagfactory’s presentation structure. All photography and business content belong to Kobags.
 
 Live review: https://ariongj.github.io/mo/
 Direct application: https://kobags-october-review.ariongj.chatgpt.site/
 
-The application and server routes are hosted by Sites, not GitHub Pages. This repository contains the Pages wrapper and the preserved prior builder files. Public route hashes retain navigation across refreshes; private routes are not embedded.
+The application and server routes are hosted by Sites, not GitHub Pages. This repository contains the Pages wrapper and the preserved prior builder files. Public route hashes retain navigation across refreshes, including validated product-example and stock-collection identifiers. Private routes are not embedded. The removed /design route redirects to /products.
 
 The official domains kobags-group.com and kobags.itdks.tech remain on version 94 and are not changed by this review.
 
