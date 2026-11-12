@@ -110,12 +110,12 @@
 .sector-intro h3{font-size:22px;line-height:1.35;letter-spacing:-.025em;margin-bottom:20px}
 .sector-intro p{font-size:15px;line-height:1.65}
 .sector-intro .text-link{margin-top:12px;font-size:14px}
-.green-card{position:relative;min-height:360px;isolation:isolate;overflow:hidden;border-radius:18px;border:1px solid #ffffffa3;background:var(--card-green);display:flex;flex-direction:column;transition:transform .3s,box-shadow .3s}
-.green-card h3{color:white;font-size:21px;line-height:1.35;letter-spacing:-.025em;padding:28px 45px 0 28px;max-width:100%;position:relative;z-index:2;font-weight:500}
-.card-arrow{position:absolute;top:28px;right:22px;color:#fff;font-size:22px;line-height:1;transition:transform .25s;z-index:2}
-.green-card-photo{position:relative;margin:22px 0 0 auto;width:78%;height:255px;background:#fff;border-radius:80% 0 0 0;overflow:hidden;flex:1;min-height:240px}
-.green-card-photo img{height:100%;width:100%;max-height:290px;object-fit:contain;object-position:70% 60%;mix-blend-mode:normal;padding:14px 12px 12px 28px;transition:transform .45s}
-.green-card:focus-visible{outline:3px solid #172d20;outline-offset:4px}
+.green-card{position:relative;min-height:350px;isolation:isolate;overflow:hidden;border-radius:16px;border:1px solid #dce1dc;background:#f4f5f1;display:flex;flex-direction:column;transition:transform .3s,box-shadow .3s,border-color .3s}
+.green-card h3{color:#173b63;font-size:21px;line-height:1.35;letter-spacing:-.025em;padding:24px 50px 0 24px;max-width:100%;position:relative;z-index:2;font-weight:600}
+.card-arrow{position:absolute;top:25px;right:22px;color:#173b63;font-size:22px;line-height:1;transition:transform .25s;z-index:2}
+.green-card-photo{position:relative;margin:18px 14px 14px;width:calc(100% - 28px);height:255px;background:#fff;border:1px solid #e6e9e2;border-radius:10px;overflow:hidden;flex:1;min-height:230px}
+.green-card-photo img{height:100%;width:100%;max-height:290px;object-fit:contain;object-position:center;mix-blend-mode:normal;padding:10px;transition:transform .45s}
+.green-card:focus-visible{outline:3px solid #173b63;outline-offset:4px}
 .reference-partnership{display:grid;grid-template-columns:1fr .9fr;gap:30px 80px;border:1px solid var(--line);border-radius:18px;padding:54px;background:#fff}
 .reference-partnership>div:first-child{align-self:center}
 .reference-partnership p{margin:25px 0;max-width:580px}
@@ -129,10 +129,10 @@
 .range-copy .button{margin-top:28px}
 .reference-products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px}
 .reference-products .green-card{min-height:280px}
-.reference-products .green-card h3{font-size:20px;padding:24px 42px 0 22px}
-.reference-products .card-arrow{top:26px;right:18px;font-size:18px}
-.reference-products .green-card-photo{height:200px;min-height:190px;margin-top:14px;width:84%}
-.reference-products .green-card-photo img{padding:14px 8px 8px 22px;max-height:230px}
+.reference-products .green-card h3{font-size:20px;padding:22px 42px 0 22px}
+.reference-products .card-arrow{top:25px;right:18px;font-size:18px}
+.reference-products .green-card-photo{height:210px;min-height:190px;margin:14px 12px 12px;width:calc(100% - 24px)}
+.reference-products .green-card-photo img{padding:8px;max-height:240px}
 .factory-band{background:#f2f7ef;min-height:550px}
 .factory-band-copy h2{font-size:clamp(34px,3.2vw,48px)}
 .reasons-section{display:grid;grid-template-columns:.85fr 1.15fr;gap:80px;align-items:start}
@@ -169,8 +169,8 @@
 .catalogue-grid .product-card>p{padding:0 5px}
 .industry-row>img{background:white;border:1px solid var(--line)}
 .page-title{background:radial-gradient(ellipse at 85% 10%,#cde7d3,transparent 70%)}
-@media(hover:hover) and (pointer:fine){.green-card:hover{transform:translateY(-5px);box-shadow:0 12px 30px #234a2a15}.green-card:hover img{transform:translateY(-5px) scale(1.035)}.green-card:hover .card-arrow{transform:translate(3px,-3px)}}
-@media(max-width:1100px){.wrap{width:calc(100% - 48px)}.reference-sectors{gap:20px}.sector-intro{padding:24px}.green-card h3{font-size:19px;padding:24px 38px 0 24px}.green-card-photo{width:85%}.reference-partnership{padding:36px;gap:30px}.range-layout{gap:32px;grid-template-columns:.85fr 1.15fr}.reference-products{gap:18px}.reasons-section{gap:45px}.product-demonstration{gap:50px}.site-header nav{gap:20px}.real-clips{gap:20px}}
+@media(hover:hover) and (pointer:fine){.green-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px #173b6314;border-color:#a8b7c3}.green-card:hover img{transform:scale(1.025)}.green-card:hover .card-arrow{transform:translate(3px,-3px)}}
+@media(max-width:1100px){.wrap{width:calc(100% - 48px)}.reference-sectors{gap:20px}.sector-intro{padding:24px}.green-card h3{font-size:19px;padding:24px 42px 0 24px}.reference-partnership{padding:36px;gap:30px}.range-layout{gap:32px;grid-template-columns:.85fr 1.15fr}.reference-products{gap:18px}.reasons-section{gap:45px}.product-demonstration{gap:50px}.site-header nav{gap:20px}.real-clips{gap:20px}}
 @media(max-width:800px){.reference-sectors{grid-template-columns:repeat(2,minmax(0,1fr))}.range-layout{grid-template-columns:1fr}.range-copy{position:static;padding:0}.range-copy p{max-width:none}.reference-range{margin-top:55px;padding-block:60px}.reference-products .green-card{min-height:300px}.reference-partnership{grid-template-columns:1fr}.partner-factory{height:300px}.partner-facts{font-size:13px}.reasons-section{grid-template-columns:1fr;gap:20px}.real-clips{gap:14px}.clip-play{padding:16px}.clip-card h3{font-size:21px}.product-demonstration{gap:35px}}
 @media(max-width:700px){
  .wrap{width:calc(100% - 36px)}
@@ -186,11 +186,11 @@
  .sector-intro{padding:25px;border-radius:16px}
  .sector-intro h3{font-size:21px;margin-bottom:16px}
  .sector-intro p{font-size:14px;line-height:1.65}
- .green-card{min-height:270px;border-radius:16px}
- .green-card h3{font-size:20px;padding:22px 44px 0 22px;max-width:330px}
+ .green-card{min-height:270px;border-radius:14px}
+ .green-card h3{font-size:20px;padding:22px 48px 0 22px;max-width:330px}
  .card-arrow{top:25px}
- .green-card-photo{height:220px;min-height:190px;margin-top:14px;width:73%}
- .green-card-photo img{max-height:235px;padding:12px 8px 10px 20px}
+ .green-card-photo{height:220px;min-height:190px;margin:14px 12px 12px;width:calc(100% - 24px)}
+ .green-card-photo img{max-height:235px;padding:8px}
  .reference-partnership{padding:25px;gap:24px;border-radius:16px}
  .reference-partnership h2{font-size:33px}
  .reference-partnership p{font-size:14px;margin:20px 0}
@@ -204,10 +204,10 @@
  .range-copy .button{margin-top:23px}
  .reference-products{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
  .reference-products .green-card{min-height:220px;border-radius:13px}
- .reference-products .green-card h3{font-size:17px;padding:18px 14px 0;line-height:1.25;min-height:60px}
+ .reference-products .green-card h3{font-size:17px;padding:18px 13px 0;line-height:1.25;min-height:60px}
  .reference-products .card-arrow{display:none}
- .reference-products .green-card-photo{height:155px;min-height:145px;width:100%;margin-top:8px;border-radius:50% 0 0 0}
- .reference-products .green-card-photo img{max-height:175px;padding:12px 3px 5px 9px}
+ .reference-products .green-card-photo{height:160px;min-height:145px;width:calc(100% - 16px);margin:8px 8px 8px;border-radius:8px}
+ .reference-products .green-card-photo img{max-height:175px;padding:5px}
  .reasons-section .values-grid article{grid-template-columns:30px 1fr;gap:0 16px;padding:22px 0}
  .reasons-section .values-grid h3{font-size:24px}
  .reasons-section .line-icon{font-size:27px}
