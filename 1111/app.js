@@ -96,7 +96,7 @@ if(film&&motionButton){
 if(!motionPreference.matches&&'IntersectionObserver' in window){
  document.documentElement.classList.add('motion-enabled');
  const observer=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){e.target.classList.add('is-visible');observer.unobserve(e.target)}},{threshold:.06,rootMargin:'0px 0px 35px 0px'});
- for(const e of document.querySelectorAll('.section-heading,.partnership,.stock-feature,.industry-row,.manufacturing-intro,.values-grid article,.sector-card,.home-products .product-card,.production-grid article')){e.classList.add('reveal');observer.observe(e)}
+ for(const e of document.querySelectorAll('.section-heading,.partnership,.stock-feature,.industry-row,.manufacturing-intro,.values-grid article,.sector-card,.home-products .product-card,.production-grid article,.green-card,.sector-intro,.range-copy,.reference-partnership,.real-bags .section-heading')){e.classList.add('reveal');observer.observe(e)}
  motionPreference.addEventListener('change',e=>{if(e.matches)document.documentElement.classList.remove('motion-enabled')});
 }
 
@@ -128,3 +128,22 @@ const stages=sq?[
 ];
 function chooseStage(i,focus=false){const d=stages[i],panel=document.querySelector('#process-panel'),image=document.querySelector('.factory-band-photo img');for(const [j,b]of stageButtons.entries()){b.setAttribute('aria-selected',String(j===i));b.tabIndex=j===i?0:-1}panel.setAttribute('aria-labelledby','process-tab-'+i);panel.querySelector('h2').textContent=d[1];panel.querySelector('p:not(.eyebrow)').textContent=d[2];image.removeAttribute('srcset');image.src='/mo/1111/assets/'+d[0];image.alt=d[3];if(focus)stageButtons[i].focus()}
 stageButtons.forEach((b,i)=>{b.addEventListener('click',()=>chooseStage(i));b.addEventListener('keydown',e=>{let n;if(e.key==='ArrowRight')n=(i+1)%3;else if(e.key==='ArrowLeft')n=(i+2)%3;else if(e.key==='Home')n=0;else if(e.key==='End')n=2;else return;e.preventDefault();chooseStage(n,true)})});
+
+// Original product clips load only after a deliberate tap, one decoder at a time.
+const productClips=[...document.querySelectorAll('video[data-clip]')];
+for(const video of productClips){
+ const button=video.closest('.clip-frame').querySelector('.clip-play');video.controls=false;
+ button.addEventListener('click',async()=>{
+  for(const other of productClips)if(other!==video)other.pause();
+  if(film&&!film.paused)film.pause();
+  if(!video.getAttribute('src')){video.src=video.dataset.clip;video.load()}
+  video.muted=true;
+  button.hidden=true;video.controls=true;
+  try{await video.play()}catch{button.hidden=false;button.querySelector('span:last-child').textContent=sq?'Provo sërish':'Try again'}
+ });
+ video.addEventListener('play',()=>{for(const other of productClips)if(other!==video)other.pause()});
+ video.addEventListener('ended',()=>{button.hidden=false;video.controls=false});
+ video.addEventListener('error',()=>{button.hidden=false;button.querySelector('span:last-child').textContent=sq?'Provo sërish':'Try again'});
+ new IntersectionObserver(entries=>{if(!entries[0].isIntersecting)video.pause()},{threshold:.05}).observe(video);
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)for(const video of productClips)video.pause()});
