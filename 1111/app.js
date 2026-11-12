@@ -42,7 +42,9 @@ const mainPhoto=document.querySelector('.main-product'),photoButtons=[...documen
 let photoIndex=0,ignoreZoomUntil=0;
 function setPhoto(button,updateURL=false){
  if(!button||!mainPhoto)return;
- photoIndex=photoButtons.indexOf(button);mainPhoto.removeAttribute('srcset');mainPhoto.src='/mo/1111/assets/'+button.dataset.photo+'.webp';mainPhoto.alt=button.querySelector('img').alt;
+ photoIndex=photoButtons.indexOf(button);
+ const photoBase='/mo/1111/assets/'+button.dataset.photo;
+ mainPhoto.srcset=photoBase+'-600.webp 600w, '+photoBase+'.webp 1280w';mainPhoto.src=photoBase+'.webp';mainPhoto.alt=button.querySelector('img').alt;
  for(const b of photoButtons)b.setAttribute('aria-pressed',String(b===button));
  for(const c of document.querySelectorAll('.gallery-counter,.lightbox-counter'))c.textContent=(sq?'Foto ':'Photo ')+(photoIndex+1)+' / '+photoButtons.length;
  if(modal.open){const img=modal.querySelector('img');img.src=mainPhoto.src;img.alt=mainPhoto.alt}
@@ -75,7 +77,7 @@ if(film&&motionButton){
  if(matchMedia('(max-width:700px)').matches){film.dataset.src=film.dataset.mobileSrc;film.poster=film.dataset.mobilePoster}
  function label(){const playing=!film.paused;motionButton.setAttribute('aria-pressed',String(playing));motionButton.querySelector('span').textContent=playing?'Ⅱ':'▶';motionButton.querySelector('.motion-label').textContent=playing?(sq?'Ndalo':'Pause film'):(sq?'Luaj':'Play film')}
  function mayPlay(){return inView&&!document.hidden&&!userPaused&&(userStarted||(!motionPreference.matches&&!navigator.connection?.saveData))}
- function load(){if(!film.getAttribute('src')){film.src=film.dataset.src;film.load()}}
+ function load(){if(!film.getAttribute('src')||film.error){film.src=film.dataset.src;film.load()}}
  async function play(){if(playPending||!film.paused)return;load();film.muted=true;playPending=true;try{await film.play();if(!mayPlay())film.pause()}catch{}finally{playPending=false;label()}}
  function sync(){if(mayPlay())play();else film.pause()}
  motionButton.addEventListener('click',()=>{if(film.paused){userPaused=false;userStarted=true;sync()}else{userPaused=true;film.pause()}});
@@ -114,6 +116,8 @@ for(const form of document.querySelectorAll('.enquiry-form')){
  const lines=[sq?'Kërkesë për ofertë Kobags':'Kobags quotation enquiry','',`${sq?'Emri':'Name'}: ${d.get('name')}`,`${sq?'Kompania':'Company'}: ${d.get('company')}`,`Email: ${d.get('email')}`,`${sq?'Telefoni':'Phone'}: ${d.get('phone')}`,`${sq?'Çanta':'Bag'}: ${label}`,`${sq?'Sasia':'Quantity'}: ${d.get('quantity')}`,`${sq?'Destinacioni':'Destination'}: ${d.get('destination')}`,'',String(d.get('message')||'')];
  const text=lines.join('\n'),result=form.querySelector('.form-result');result.hidden=false;result.querySelector('.enquiry-text').textContent=text;result.querySelector('.send-email').href='mailto:info@kobags-group.com?subject='+encodeURIComponent((sq?'Kërkesë për ofertë — ':'Quotation enquiry — ')+label)+'&body='+encodeURIComponent(text);result.querySelector('.copy-enquiry').onclick=async e=>{try{await navigator.clipboard.writeText(text);e.target.textContent=sq?'U kopjua':'Copied'}catch{e.target.textContent=sq?'Përzgjidhni dhe kopjoni tekstin poshtë':'Select and copy the text below'}};result.focus();result.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
  });
+ // Enable native submission only once the local email-draft handler is attached.
+ form.querySelector('button[type="submit"]').disabled=false;
 }
 
 const stageButtons=[...document.querySelectorAll('[data-stage]')];
@@ -132,18 +136,18 @@ stageButtons.forEach((b,i)=>{b.addEventListener('click',()=>chooseStage(i));b.ad
 // Original product clips load only after a deliberate tap, one decoder at a time.
 const productClips=[...document.querySelectorAll('video[data-clip]')];
 for(const video of productClips){
- const button=video.closest('.clip-frame').querySelector('.clip-play');video.controls=false;
+ const button=video.closest('.clip-frame').querySelector('.clip-play'),buttonLabel=button.querySelector('span:last-child'),watchLabel=buttonLabel.textContent;video.controls=false;
  button.addEventListener('click',async()=>{
   for(const other of productClips)if(other!==video)other.pause();
   if(film&&!film.paused)film.pause();
-  if(!video.getAttribute('src')){video.src=video.dataset.clip;video.load()}
+  if(!video.getAttribute('src')||video.error){video.src=video.dataset.clip;video.load()}
   video.muted=true;
   button.hidden=true;video.controls=true;
-  try{await video.play()}catch{button.hidden=false;button.querySelector('span:last-child').textContent=sq?'Provo sërish':'Try again'}
+  try{await video.play();buttonLabel.textContent=watchLabel}catch{button.hidden=false;video.controls=false;buttonLabel.textContent=sq?'Provo sërish':'Try again'}
  });
  video.addEventListener('play',()=>{for(const other of productClips)if(other!==video)other.pause()});
  video.addEventListener('ended',()=>{button.hidden=false;video.controls=false});
- video.addEventListener('error',()=>{button.hidden=false;button.querySelector('span:last-child').textContent=sq?'Provo sërish':'Try again'});
+ video.addEventListener('error',()=>{button.hidden=false;video.controls=false;buttonLabel.textContent=sq?'Provo sërish':'Try again'});
  new IntersectionObserver(entries=>{if(!entries[0].isIntersecting)video.pause()},{threshold:.05}).observe(video);
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)for(const video of productClips)video.pause()});
