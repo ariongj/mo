@@ -1,7 +1,16 @@
-# Kobags Factory Edition
+# KOBAGS Factory Edition — GitHub review
 
-Standalone static review version. No 3D builder. No connection to the existing CMS. Enquiries prepare email drafts; nothing is automatically sent.
+Standalone bilingual review hosted only at https://ariongj.github.io/mo/1111/.
+The repository root review and the official domains are separate and are not changed by this folder.
 
-Published paths use /mo/1111/ as the base. English and Albanian pages included. Fonts are self-hosted; see assets/Inter-LICENSE.txt.
+## Features
+- Four-cut, 16-second factory film, with separate mobile crop, scene selection, pause and offscreen suspension.
+- No automatic video loading for reduced-motion or Save-Data visitors.
+- Swipeable product range, filter counts and URL-preserved selections.
+- Product galleries with touch swiping, arrows, keyboard navigation and full-size photo dialog.
+- Local fonts, real client production photographs and lightweight CSS entry transitions.
+- EN/SQ pages. No 3D builder.
 
-The homepage includes a muted factory-video hero with play/pause, offscreen pausing, reduced-motion/data-saving support, scroll reveals and keyboard-accessible production tabs. Video was selected from the client's CoBag archive, compressed to H.264 without audio, and bundled locally.
+Enquiries prepare an email draft. The visitor must send it from their email app; this static review has no CMS submission backend.
+
+Static HTML, CSS and JavaScript; no build dependency or third-party analytics.
