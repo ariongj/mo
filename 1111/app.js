@@ -47,6 +47,8 @@ function setPhoto(button,updateURL=false){
  mainPhoto.srcset=photoBase+'-600.webp 600w, '+photoBase+'.webp 1280w';mainPhoto.src=photoBase+'.webp';mainPhoto.alt=button.querySelector('img').alt;
  for(const b of photoButtons)b.setAttribute('aria-pressed',String(b===button));
  for(const c of document.querySelectorAll('.gallery-counter,.lightbox-counter'))c.textContent=(sq?'Foto ':'Photo ')+(photoIndex+1)+' / '+photoButtons.length;
+ const selection=document.querySelector('.gallery-selection');if(selection)selection.textContent=mainPhoto.alt;
+ const strip=button.parentElement,r=button.getBoundingClientRect(),bounds=strip.getBoundingClientRect();if(r.left<bounds.left||r.right>bounds.right)strip.scrollBy({left:r.left-bounds.left-(strip.clientWidth-r.width)/2,behavior:updateURL?motion():'instant'});
  if(modal.open){const img=modal.querySelector('img');img.src=mainPhoto.src;img.alt=mainPhoto.alt}
  if(updateURL){const u=new URL(location.href);u.searchParams.set('photo',button.dataset.photo);history.replaceState(null,'',u);syncLanguages()}
 }
@@ -55,7 +57,7 @@ if(mainPhoto){
  for(const b of photoButtons)b.addEventListener('click',()=>setPhoto(b,true));
  for(const b of document.querySelectorAll('.gallery-prev'))b.addEventListener('click',()=>movePhoto(-1));
  for(const b of document.querySelectorAll('.gallery-next'))b.addEventListener('click',()=>movePhoto(1));
- mainPhoto.addEventListener('load',()=>{if(!motionPreference.matches)mainPhoto.animate([{opacity:.5,transform:'scale(.985)'},{opacity:1,transform:'scale(1)'}],{duration:220})});
+ mainPhoto.addEventListener('load',()=>{if(!motionPreference.matches)mainPhoto.animate([{opacity:.65},{opacity:1}],{duration:180})});
  setPhoto(photoButtons.find(b=>b.dataset.photo===params.get('photo'))||photoButtons[0]);
  zoom.addEventListener('click',()=>{if(performance.now()<ignoreZoomUntil)return;const img=modal.querySelector('img');img.src=mainPhoto.src;img.alt=mainPhoto.alt;modal.showModal()});
  for(const surface of [zoom,modal])surface.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();movePhoto(e.key==='ArrowRight'?1:-1)}});

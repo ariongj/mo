@@ -13,7 +13,7 @@ This edition lives only under `1111/` in `ariongj/mo`. It does not replace `/mo/
 - Forms prepare an email draft. They do not send automatically or write to a CRM.
 - No 3D builder. Review remains marked noindex.
 
-Stylesheet version: 7. JavaScript version: 7. Media version: 5. Product media comes from the client's supplied archive and demonstration videos. Instagram access was unavailable; no media was downloaded from Instagram. Product photos were resized/encoded only, with their original fabric, colours and print preserved.
+Shared stylesheet version: 7. Product stylesheet version: 8. JavaScript version: 8. Media version: 5. Product media comes from the client's supplied archive and demonstration videos. Instagram access was unavailable; no media was downloaded from Instagram. Product photos were resized/encoded only, with their original fabric, colours and print preserved.
 
 Media quality update: desktop film 1728 × 972 / 30fps; mobile film 576 × 864 / 30fps; product clips retain their native displayed resolution. H.264 CRF20 encoding. New media filenames avoid stale cached clips. Source files are compressed vertical WhatsApp clips (maximum 576 × 1024), so the desktop composition presents multiple full-height views instead of heavily cropping a single phone video. This does not create native HD detail missing from the originals.
 
@@ -21,3 +21,5 @@ Voice-note update, 12 November 2026: replaced the curved green product/sector ca
 
 Final audit update: reliable video retries, preserved mobile-menu language state, safe email-draft forms when JavaScript is unavailable, explicit local-resource CSP and referrer policy, accessible control contrast/landmarks/headings, and provider-specific hosting privacy information. Review remains noindex and enquiries remain user-sent email drafts.
 Product gallery audit: small thumbnails and related cards now request an appropriate responsive image size; gallery selection retains responsive sources, while zoom keeps the full-resolution photograph.
+
+Product layout update, 13 November 2026: compact EN/SQ catalogue filters with family counts, framed production-photo cards and clearer labels; product headings before galleries on mobile, integrated photo controls, named gallery choices, grouped specifications and quotation controls. Product clips precede related shapes and retain their natural portrait proportions. Photographs, product specifications and the existing enquiry process are unchanged. Scoped products.css and JavaScript version 8.
